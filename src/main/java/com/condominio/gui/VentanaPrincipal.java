@@ -79,9 +79,6 @@ public class VentanaPrincipal extends JFrame {
             }
             java.io.File archivoLocal = new java.io.File("src/main/resources/logo.png");
             if (!archivoLocal.exists()) {
-                archivoLocal = new java.io.File("imagenes_informe/logo.png");
-            }
-            if (!archivoLocal.exists()) {
                 archivoLocal = new java.io.File("C:/Users/Computecno/Documents/DP/src/main/resources/logo.png");
             }
             if (archivoLocal.exists()) {

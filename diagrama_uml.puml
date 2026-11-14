@@ -1,0 +1,463 @@
+@startuml DiagramaUML_TuCobranzaVecinal
+title TuCobranza Vecinal - Diagrama de Clases UML (Semana 11: 25 Clases de Dominio y 9 Patrones GoF)
+
+skinparam classAttributeIconSize 0
+skinparam monochrome false
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+' ==============================================================================
+' PAQUETE PRINCIPAL Y CONFIGURACION
+' ==============================================================================
+package "com.condominio" {
+    class AplicacionCobranzaVecinal {
+        + {static} main(argumentos: String[]): void
+        + ejecutarDemostracionPatrones(): CommandLineRunner
+    }
+}
+
+package "com.condominio.configuracion" {
+    class ConfiguracionCondominio <<Singleton>> {
+        - {static} instancia: ConfiguracionCondominio
+        - tasaInteresMora: double
+        - diasGracia: int
+        - diasParaMora: int
+        - ConfiguracionCondominio()
+        + {static} obtenerInstancia(): ConfiguracionCondominio
+        + getTasaInteresMora(): double
+        + getDiasGracia(): int
+        + getDiasParaMora(): int
+    }
+}
+
+' ==============================================================================
+' DOMINIO: PERSONAS (6 CLASES)
+' ==============================================================================
+package "com.condominio.modelo.personas" {
+    abstract class Usuario {
+        - id: Long
+        - nombre: String
+        - correo: String
+        - telefono: String
+        - dni: String
+        - fechaRegistro: LocalDate
+    }
+
+    class Propietario {
+        - banco: String
+        - cuentaBancaria: String
+    }
+
+    class Inquilino {
+        - fechaInicioContrato: LocalDate
+        - fechaFinContrato: LocalDate
+    }
+
+    class Mascota {
+        - id: Long
+        - nombre: String
+        - especie: String
+        - raza: String
+        - edad: Integer
+        - departamento: Departamento
+    }
+
+    class Vehiculo {
+        - id: Long
+        - placa: String
+        - marca: String
+        - modelo: String
+        - color: String
+        - departamento: Departamento
+    }
+
+    class Visita {
+        - id: Long
+        - nombreVisitante: String
+        - dniVisitante: String
+        - fechaHoraIngreso: LocalDateTime
+        - fechaHoraSalida: LocalDateTime
+        - departamento: Departamento
+    }
+}
+
+' ==============================================================================
+' DOMINIO: INMUEBLES (7 CLASES)
+' ==============================================================================
+package "com.condominio.modelo.inmuebles" {
+    class Condominio {
+        - id: Long
+        - nombre: String
+        - direccion: String
+        - reglamento: String
+    }
+
+    class Edificio {
+        - id: Long
+        - nombre: String
+        - numeroPisos: Integer
+        - condominio: Condominio
+    }
+
+    class Torre {
+        - id: Long
+        - nombre: String
+        - numeroPisos: Integer
+        - edificio: Edificio
+    }
+
+    class Departamento {
+        - id: Long
+        - numero: String
+        - piso: Integer
+        - metrosCuadrados: Double
+        - numeroHabitantes: Integer
+        - torre: Torre
+        - propietario: Propietario
+        - inquilinoActual: Inquilino
+    }
+
+    class Estacionamiento {
+        - id: Long
+        - numero: String
+        - tipo: String
+        - departamento: Departamento
+    }
+
+    class Deposito {
+        - id: Long
+        - numero: String
+        - metrosCuadrados: Double
+        - departamento: Departamento
+    }
+
+    class AreaComun {
+        - id: Long
+        - nombre: String
+        - capacidad: Integer
+        - costoReserva: Double
+        - condominio: Condominio
+    }
+}
+
+' ==============================================================================
+' DOMINIO: FINANCIERO (8 CLASES)
+' ==============================================================================
+package "com.condominio.modelo.financiero" {
+    class CuotaMantenimiento {
+        - id: Long
+        - montoBase: Double
+        - montoTotal: Double
+        - fechaEmision: LocalDate
+        - fechaVencimiento: LocalDate
+        - estado: String
+        - departamento: Departamento
+    }
+
+    class Pago {
+        - id: Long
+        - monto: Double
+        - fechaPago: LocalDate
+        - metodoPago: String
+        - departamento: Departamento
+    }
+
+    class HistorialPago {
+        - id: Long
+        - fechaModificacion: LocalDateTime
+        - estadoAnterior: String
+        - estadoNuevo: String
+        - cuota: CuotaMantenimiento
+    }
+
+    abstract class GastoComun {
+        - id: Long
+        - monto: Double
+        - fecha: LocalDate
+        - descripcion: String
+        - condominio: Condominio
+    }
+
+    class GastoAgua {
+        - lecturaActual: Double
+        - lecturaAnterior: Double
+    }
+
+    class GastoLuz {
+        - consumoKwh: Double
+    }
+
+    class GastoLimpieza {
+        - contratoEmpresa: String
+    }
+
+    class Multa {
+        - id: Long
+        - motivo: String
+        - monto: Double
+        - fecha: LocalDate
+        - estado: String
+        - departamento: Departamento
+    }
+}
+
+' ==============================================================================
+' DOMINIO: OPERACIONES (4 CLASES)
+' ==============================================================================
+package "com.condominio.modelo.operaciones" {
+    class ReservaArea {
+        - id: Long
+        - fechaReserva: LocalDate
+        - horaInicio: LocalTime
+        - horaFin: LocalTime
+        - estado: String
+        - propietario: Propietario
+        - areaComun: AreaComun
+    }
+
+    class Incidente {
+        - id: Long
+        - descripcion: String
+        - fecha: LocalDate
+        - estado: String
+        - reportadoPor: String
+    }
+
+    class Comunicado {
+        - id: Long
+        - titulo: String
+        - mensaje: String
+        - fechaPublicacion: LocalDate
+        - autor: String
+    }
+
+    class Proveedor {
+        - id: Long
+        - nombre: String
+        - servicio: String
+        - telefono: String
+        - correo: String
+    }
+}
+
+' ==============================================================================
+' PATRONES DE DISENO (9 PATRONES GOF)
+' ==============================================================================
+
+' 1. SINGLETON (Semana 6)
+package "com.condominio.patrones.singleton" {
+    class ConfiguracionCondominio <<Singleton>>
+}
+
+' 2. PROTOTYPE (Semana 6)
+package "com.condominio.patrones.prototype" {
+    interface PrototipoCuota <<Prototype>> {
+        + clonar(): PrototipoCuota
+    }
+
+    class CuotaPrototipo implements PrototipoCuota {
+        - id: Long
+        - montoBase: Double
+        - concepto: String
+        - mesPeriodo: String
+        - estado: String
+        + clonar(): CuotaPrototipo
+    }
+}
+
+' 3. FACTORY METHOD (Semana 7)
+package "com.condominio.patrones.factorymethod" {
+    enum TipoGasto {
+        AGUA
+        LUZ
+        LIMPIEZA
+    }
+
+    class GastoComunFabrica <<FactoryMethod>> {
+        + {static} crearGastoAgua(id, monto, fecha, desc, cond, act, ant): GastoAgua
+        + {static} crearGastoLuz(id, monto, fecha, desc, cond, kwh): GastoLuz
+        + {static} crearGastoLimpieza(id, monto, fecha, desc, cond, contrato): GastoLimpieza
+        + {static} crearGasto(tipo: TipoGasto, id, monto, fecha, desc, cond): GastoComun
+    }
+}
+
+' 4. ABSTRACT FACTORY (Semana 7)
+package "com.condominio.patrones.abstractfactory" {
+    interface FabricaInmueble <<AbstractFactory>> {
+        + crearEdificio(id, nombre, pisos, cond): Edificio
+        + crearDepartamento(id, numero, piso, m2): Departamento
+        + crearAreaComun(id, nombre, cap, costo, cond): AreaComun
+    }
+
+    class FabricaResidencial implements FabricaInmueble {
+        + crearEdificio(id, nombre, pisos, cond): Edificio
+        + crearDepartamento(id, numero, piso, m2): Departamento
+        + crearAreaComun(id, nombre, cap, costo, cond): AreaComun
+    }
+
+    class FabricaComercial implements FabricaInmueble {
+        + crearEdificio(id, nombre, pisos, cond): Edificio
+        + crearDepartamento(id, numero, piso, m2): Departamento
+        + crearAreaComun(id, nombre, cap, costo, cond): AreaComun
+    }
+}
+
+' 5. BUILDER (Semana 7)
+package "com.condominio.patrones.builder" {
+    class DepartamentoBuilder <<Builder>> {
+        - id: Long
+        - numero: String
+        - piso: Integer
+        - metrosCuadrados: Double
+        - numeroHabitantes: Integer
+        - torre: Torre
+        - propietario: Propietario
+        - inquilinoActual: Inquilino
+        + conId(id: Long): DepartamentoBuilder
+        + conNumero(numero: String): DepartamentoBuilder
+        + conPiso(piso: Integer): DepartamentoBuilder
+        + conMetrosCuadrados(m2: Double): DepartamentoBuilder
+        + conNumeroHabitantes(hab: Integer): DepartamentoBuilder
+        + conTorre(torre: Torre): DepartamentoBuilder
+        + conPropietario(prop: Propietario): DepartamentoBuilder
+        + conInquilinoActual(inq: Inquilino): DepartamentoBuilder
+        + build(): Departamento
+    }
+}
+
+' 6. ADAPTER (Semana 8)
+package "com.condominio.patrones.adapter" {
+    interface SistemaLegado {
+        + procesarTransaccionAntigua(codigo: String, valor: double, fecha: String): String
+    }
+
+    interface NuevoFormatoPago {
+        + procesarPago(pagoId: Long, depto: Departamento, monto: Double, metodo: String): Pago
+    }
+
+    class AdaptadorSistemaLegado <<Adapter>> implements NuevoFormatoPago {
+        - sistemaLegado: SistemaLegado
+        + AdaptadorSistemaLegado(sistemaLegado: SistemaLegado)
+        + procesarPago(pagoId: Long, depto: Departamento, monto: Double, metodo: String): Pago
+    }
+}
+
+' 7. FACADE (Semana 8)
+package "com.condominio.patrones.facade" {
+    class CobranzaFachada <<Facade>> {
+        - configuracion: ConfiguracionCondominio
+        + generarCuotaMensual(id: Long, depto: Departamento, base: Double, venc: LocalDate): CuotaMantenimiento
+        + calcularMoraCuota(cuota: CuotaMantenimiento, fechaEval: LocalDate): double
+        + calcularMoraCuota(cuota: CuotaMantenimiento): double
+        + registrarPago(pagoId: Long, histId: Long, cuota: CuotaMantenimiento, monto: Double, metodo: String): HistorialPago
+        + solicitarReserva(id: Long, prop: Propietario, area: AreaComun, fecha: LocalDate, ...): ReservaArea
+    }
+}
+
+' 8. DECORATOR (Semana 9)
+package "com.condominio.patrones.decorator" {
+    class CuotaBase {
+        - monto: double
+        - concepto: String
+        + calcularMontoTotal(): double
+        + obtenerDescripcion(): String
+    }
+
+    abstract class DecoradorCuota <<Decorator>> extends CuotaBase {
+        # cuotaDecorada: CuotaBase
+        + DecoradorCuota(cuotaDecorada: CuotaBase)
+        + {abstract} calcularMontoTotal(): double
+        + {abstract} obtenerDescripcion(): String
+    }
+
+    class DecoradorRecargoMora extends DecoradorCuota {
+        - porcentajeMora: double
+        + DecoradorRecargoMora(cuota: CuotaBase, porcentajeMora: double)
+        + calcularMontoTotal(): double
+        + obtenerDescripcion(): String
+    }
+
+    class DecoradorDescuentoProntoPago extends DecoradorCuota {
+        - porcentajeDescuento: double
+        + DecoradorDescuentoProntoPago(cuota: CuotaBase, porcentajeDescuento: double)
+        + calcularMontoTotal(): double
+        + obtenerDescripcion(): String
+    }
+}
+
+' 9. COMPOSITE (Semana 9)
+package "com.condominio.patrones.composite" {
+    interface ComponenteInmueble <<Composite>> {
+        + calcularAreaTotal(): double
+        + obtenerNombre(): String
+    }
+
+    class HojaInmueble implements ComponenteInmueble {
+        - nombre: String
+        - metrosCuadrados: double
+        + calcularAreaTotal(): double
+        + obtenerNombre(): String
+    }
+
+    class CompuestoInmueble implements ComponenteInmueble {
+        - nombre: String
+        - hijos: List<ComponenteInmueble>
+        + agregarHijo(hijo: ComponenteInmueble): void
+        + removerHijo(hijo: ComponenteInmueble): void
+        + calcularAreaTotal(): double
+        + obtenerNombre(): String
+    }
+}
+
+' ==============================================================================
+' RELACIONES DE DOMINIO
+' ==============================================================================
+Usuario <|-- Propietario
+Usuario <|-- Inquilino
+GastoComun <|-- GastoAgua
+GastoComun <|-- GastoLuz
+GastoComun <|-- GastoLimpieza
+
+' Composiciones
+Condominio "1" *-- "*" Edificio
+Edificio "1" *-- "*" Torre
+Torre "1" *-- "*" Departamento
+Departamento "1" *-- "*" CuotaMantenimiento
+Departamento "1" *-- "*" Pago
+Departamento "1" *-- "*" Multa
+CuotaMantenimiento "1" *-- "*" HistorialPago
+
+' Agregaciones
+Condominio "1" o-- "*" AreaComun
+Condominio "1" o-- "*" GastoComun
+Departamento "1" o-- "*" Estacionamiento
+Departamento "1" o-- "*" Deposito
+Departamento "1" o-- "*" Mascota
+Departamento "1" o-- "*" Vehiculo
+Departamento "1" o-- "*" Visita
+
+' Asociaciones
+Departamento --> Propietario
+Departamento --> Inquilino
+ReservaArea --> Propietario
+ReservaArea --> AreaComun
+
+' ==============================================================================
+' RELACIONES DE PATRONES
+' ==============================================================================
+GastoComunFabrica ..> GastoComun : crea
+FabricaInmueble ..> Edificio : crea
+FabricaInmueble ..> Departamento : crea
+FabricaInmueble ..> AreaComun : crea
+DepartamentoBuilder ..> Departamento : construye
+AdaptadorSistemaLegado o-- SistemaLegado : adapta
+AdaptadorSistemaLegado ..> Pago : genera
+CobranzaFachada --> ConfiguracionCondominio : usa
+CobranzaFachada ..> CuotaMantenimiento : orquesta
+CobranzaFachada ..> HistorialPago : orquesta
+CobranzaFachada ..> ReservaArea : orquesta
+DecoradorCuota o-- CuotaBase : envuelve
+CompuestoInmueble o-- ComponenteInmueble : contiene
+AplicacionCobranzaVecinal ..> CobranzaFachada : demuestra
+AplicacionCobranzaVecinal ..> DepartamentoBuilder : demuestra
+@enduml

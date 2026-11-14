@@ -1,0 +1,58 @@
+# Compilación y binarios Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Logs, notificaciones y persistencia temporal
+*.log
+logs/
+notificaciones/
+exportaciones/
+data/
+
+# Configuración local de IDEs
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+nbproject/private/
+
+# Exclusión estricta de informes, diccionarios y plantillas
+*.docx
+*.pdf
+*.dotx
+*.xlsx
+*.csv
+*.txt
+*.json
+*.py
+*.ps1
+INFORME*.md
+informe*.md
+REPORTE*.md
+*_Cheat_Sheet.md
+GUIA_CONEXION_BASE_DATOS_EXTERNA.md
+SKILL.md
+.cursorrules
+
+# Carpetas de respaldo, imágenes e informes
+backup_animacion/
+v2.2.0-anim/
+capturas/
+imagenes_informe/
+reportes/
+
+# Archivos comprimidos
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Temporales de sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+*.html

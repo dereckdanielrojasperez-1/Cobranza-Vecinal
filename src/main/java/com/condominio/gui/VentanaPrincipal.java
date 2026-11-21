@@ -214,12 +214,12 @@ public class VentanaPrincipal extends JFrame {
             alSeleccionarModuloRiel(rielLateral.getElementoActivo());
         }
 
-        if (SesionActual.esPresidente()) {
+        if (SesionActual.esResidente()) {
             SwingUtilities.invokeLater(() -> {
                 com.condominio.gui.animacion.AnimadorToast.mostrar(
-                        "BIENVENIDO PRESIDENTE",
+                        "BIENVENIDO RESIDENTE",
                         "Presione 'Asistente IA' o 'Modo Instructivo' para un recorrido guiado del sistema",
-                        new Color(0x38, 0xBD, 0xF8)
+                        EstilosUI.ACENTO_RESIDENTES
                 );
             });
         }
@@ -519,13 +519,10 @@ public class VentanaPrincipal extends JFrame {
         }
 
         Color cUsuario = SesionActual.esAdministrador() ? EstilosUI.DORADO_PRINCIPAL
-                : (SesionActual.esPresidente() ? new Color(0x38, 0xBD, 0xF8)
-                : (SesionActual.esGerente() ? new Color(0x58, 0xC9, 0x9A)
-                : (SesionActual.esConserje() ? EstilosUI.ACENTO_OPERACIONES : EstilosUI.ACENTO_RESIDENTES)));
+                : (SesionActual.esConserje() ? EstilosUI.ACENTO_OPERACIONES : EstilosUI.ACENTO_RESIDENTES);
         String etiquetaRol = "Rol: " + SesionActual.getRol() +
-                (SesionActual.esPresidente() ? " (Depto 101 - Junta)"
-                : (SesionActual.esGerente() ? " (Operaciones)"
-                : (SesionActual.esResidente() ? " (Depto 101)" : (SesionActual.esConserje() ? " (Portería)" : " (Total)"))));
+                (SesionActual.esResidente() ? " (Depto 101 - Residente)"
+                : (SesionActual.esConserje() ? " (Portería / Operaciones)" : " (Total)"));
         panelDerecho.add(crearPildoraPastel(etiquetaRol, new Color(cUsuario.getRed(), cUsuario.getGreen(), cUsuario.getBlue(), (int)(255 * 0.15)), cUsuario, cUsuario));
 
         header.add(panelDerecho, BorderLayout.EAST);
@@ -537,14 +534,10 @@ public class VentanaPrincipal extends JFrame {
         pnl.setOpaque(false);
 
         Color cAcento = SesionActual.esAdministrador() ? EstilosUI.DORADO_PRINCIPAL
-                : (SesionActual.esPresidente() ? new Color(0x38, 0xBD, 0xF8)
-                : (SesionActual.esGerente() ? new Color(0x58, 0xC9, 0x9A)
-                : (SesionActual.esConserje() ? EstilosUI.ACENTO_OPERACIONES : EstilosUI.ACENTO_RESIDENTES)));
+                : (SesionActual.esConserje() ? EstilosUI.ACENTO_OPERACIONES : EstilosUI.ACENTO_RESIDENTES);
 
         String inicial = SesionActual.esAdministrador() ? "A"
-                : (SesionActual.esPresidente() ? "P"
-                : (SesionActual.esGerente() ? "G"
-                : (SesionActual.esConserje() ? "C" : "R")));
+                : (SesionActual.esConserje() ? "C" : "R");
 
         JLabel avatar = new JLabel(inicial, SwingConstants.CENTER) {
             @Override
@@ -974,7 +967,7 @@ public class VentanaPrincipal extends JFrame {
                 );
             }
 
-        } else if (rol == RolUsuario.PRESIDENTE || rol == RolUsuario.RESIDENTE) {
+        } else if (rol == RolUsuario.RESIDENTE) {
             if (rielLateral != null) {
                 overlayTutorial.registrarPaso(
                         rielLateral,

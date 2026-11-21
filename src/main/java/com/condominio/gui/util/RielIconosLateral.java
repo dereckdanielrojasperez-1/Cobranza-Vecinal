@@ -233,13 +233,9 @@ public class RielIconosLateral extends JPanel {
         pnl.setOpaque(false);
 
         Color cAcento = SesionActual.esAdministrador() ? EstilosUI.DORADO_PRINCIPAL
-                : (SesionActual.esPresidente() ? new Color(0x38, 0xBD, 0xF8)
-                : (SesionActual.esGerente() ? new Color(0x58, 0xC9, 0x9A)
-                : (SesionActual.esConserje() ? EstilosUI.ACENTO_OPERACIONES : EstilosUI.ACENTO_RESIDENTES)));
+                : (SesionActual.esConserje() ? EstilosUI.ACENTO_OPERACIONES : EstilosUI.ACENTO_RESIDENTES);
         String inicial = SesionActual.esAdministrador() ? "A"
-                : (SesionActual.esPresidente() ? "P"
-                : (SesionActual.esGerente() ? "G"
-                : (SesionActual.esConserje() ? "C" : "R")));
+                : (SesionActual.esConserje() ? "C" : "R");
 
         JLabel avatar = new JLabel(inicial, SwingConstants.CENTER) {
             @Override

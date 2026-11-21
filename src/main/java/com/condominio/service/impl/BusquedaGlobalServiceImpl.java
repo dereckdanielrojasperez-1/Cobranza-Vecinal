@@ -70,8 +70,8 @@ public class BusquedaGlobalServiceImpl implements IBusquedaGlobalService {
 
         RolUsuario rolEfectivo = (rol != null) ? rol : SesionActual.getRol();
         boolean esAdmin = (rolEfectivo == RolUsuario.ADMINISTRADOR);
-        boolean esConserje = (rolEfectivo == RolUsuario.CONSERJE || rolEfectivo == RolUsuario.GERENTE);
-        boolean esResidente = (rolEfectivo == RolUsuario.RESIDENTE || rolEfectivo == RolUsuario.PRESIDENTE);
+        boolean esConserje = (rolEfectivo == RolUsuario.CONSERJE);
+        boolean esResidente = (rolEfectivo == RolUsuario.RESIDENTE);
         String miDepto = (deptoResidente != null && !deptoResidente.isBlank()) ? deptoResidente.trim() : "101";
 
         buscarComunicados(query, esAdmin, resultados);

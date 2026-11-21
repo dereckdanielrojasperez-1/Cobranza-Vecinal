@@ -40,7 +40,7 @@ public class DialogoLogin extends JDialog {
     }
 
     private void configurarVentana() {
-        setSize(480, 520);
+        setSize(440, 490);
         setResizable(false);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -125,18 +125,14 @@ public class DialogoLogin extends JDialog {
 
         // Acceso Rápido Demo (Píldoras de selección estilizadas con acentos por rol)
         restricciones.gridy = 5;
-        JPanel panelAccesoRapido = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 4));
+        JPanel panelAccesoRapido = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 4));
         panelAccesoRapido.setOpaque(false);
 
         JButton botonRolAdmin = crearBotonRolRapido("Admin", "admin", "admin123", EstilosUI.DORADO_PRINCIPAL);
-        JButton botonRolPresidente = crearBotonRolRapido("Presidente", "presidente", "presidente123", new Color(0x38, 0xBD, 0xF8));
-        JButton botonRolGerente = crearBotonRolRapido("Gerente", "gerente", "gerente123", new Color(0x58, 0xC9, 0x9A));
         JButton botonRolConserje = crearBotonRolRapido("Conserje", "conserje", "conserje123", EstilosUI.ACENTO_OPERACIONES);
         JButton botonRolResidente = crearBotonRolRapido("Residente", "residente", "residente123", EstilosUI.ACENTO_RESIDENTES);
 
         panelAccesoRapido.add(botonRolAdmin);
-        panelAccesoRapido.add(botonRolPresidente);
-        panelAccesoRapido.add(botonRolGerente);
         panelAccesoRapido.add(botonRolConserje);
         panelAccesoRapido.add(botonRolResidente);
         panelTarjeta.add(panelAccesoRapido, restricciones);
@@ -266,14 +262,6 @@ public class DialogoLogin extends JDialog {
                 usuarioEncontrado = UsuarioSistema.builder()
                         .usuario("admin").clave("admin123").rol(RolUsuario.ADMINISTRADOR)
                         .nombreCompleto("Administrador General").activo(true).build();
-            } else if ("presidente".equalsIgnoreCase(usuarioIngresado) && "presidente123".equals(claveIngresada)) {
-                usuarioEncontrado = UsuarioSistema.builder()
-                        .usuario("presidente").clave("presidente123").rol(RolUsuario.PRESIDENTE)
-                        .nombreCompleto("Presidente de la Junta").activo(true).build();
-            } else if ("gerente".equalsIgnoreCase(usuarioIngresado) && "gerente123".equals(claveIngresada)) {
-                usuarioEncontrado = UsuarioSistema.builder()
-                        .usuario("gerente").clave("gerente123").rol(RolUsuario.GERENTE)
-                        .nombreCompleto("Gerente de Operaciones").activo(true).build();
             } else if ("conserje".equalsIgnoreCase(usuarioIngresado) && "conserje123".equals(claveIngresada)) {
                 usuarioEncontrado = UsuarioSistema.builder()
                         .usuario("conserje").clave("conserje123").rol(RolUsuario.CONSERJE)

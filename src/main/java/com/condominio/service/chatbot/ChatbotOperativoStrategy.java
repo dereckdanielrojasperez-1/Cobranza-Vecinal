@@ -17,7 +17,7 @@ public class ChatbotOperativoStrategy implements IEstrategiaChatbot {
 
     @Override
     public RolUsuario getRolObjetivo() {
-        return RolUsuario.GERENTE;
+        return RolUsuario.CONSERJE;
     }
 
     @Override

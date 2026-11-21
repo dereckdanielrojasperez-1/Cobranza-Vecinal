@@ -15,7 +15,7 @@ public class ChatbotPresidenteStrategy implements IEstrategiaChatbot {
 
     @Override
     public RolUsuario getRolObjetivo() {
-        return RolUsuario.PRESIDENTE;
+        return RolUsuario.RESIDENTE;
     }
 
     @Override

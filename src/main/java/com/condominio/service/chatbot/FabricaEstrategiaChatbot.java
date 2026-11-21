@@ -14,9 +14,6 @@ public class FabricaEstrategiaChatbot {
         switch (rol) {
             case ADMINISTRADOR:
                 return new ChatbotAdminStrategy();
-            case PRESIDENTE:
-                return new ChatbotPresidenteStrategy();
-            case GERENTE:
             case CONSERJE:
                 return new ChatbotOperativoStrategy();
             case RESIDENTE:

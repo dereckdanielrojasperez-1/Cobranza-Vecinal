@@ -73,11 +73,11 @@ public class ChatbotServiceTest {
     }
 
     @Test
-    @DisplayName("Presidente debe consultar metodos de pago (Yape/Plin/BCP) y desglose de su consumo")
+    @DisplayName("Presidente y Residente deben consultar metodos de pago (Yape/Plin/BCP) y desglose de su consumo")
     public void testPresidenteMetodosPagoYConsumo() {
         // Métodos de pago
         RespuestaChatbotDTO respPago = chatbotService.procesarMensaje(
-                "¿cómo pagar con Yape o Plin?", RolUsuario.PRESIDENTE, "101"
+                "¿cómo pagar con Yape o Plin?", RolUsuario.RESIDENTE, "101"
         );
         assertNotNull(respPago);
         assertEquals(TipoRespuestaChatbot.TEXTO, respPago.getTipo());
@@ -86,7 +86,7 @@ public class ChatbotServiceTest {
 
         // Desglose de consumo y piso
         RespuestaChatbotDTO respConsumo = chatbotService.procesarMensaje(
-                "consultar mi consumo y detalles de mi piso", RolUsuario.PRESIDENTE, "101"
+                "consultar mi consumo y detalles de mi piso", RolUsuario.RESIDENTE, "101"
         );
         assertNotNull(respConsumo);
         assertEquals(TipoRespuestaChatbot.TEXTO, respConsumo.getTipo());
@@ -95,11 +95,11 @@ public class ChatbotServiceTest {
     }
 
     @Test
-    @DisplayName("Presidente debe tener restricción estricta RBAC para exportar PDF o Excel financiero")
+    @DisplayName("Presidente y Residente deben tener restricción estricta RBAC para exportar PDF o Excel financiero")
     public void testPresidenteRestriccionRbacExportacion() {
         // Intento de exportar PDF
         RespuestaChatbotDTO respPdf = chatbotService.procesarMensaje(
-                "exportar reporte financiero a pdf", RolUsuario.PRESIDENTE, "101"
+                "exportar reporte financiero a pdf", RolUsuario.RESIDENTE, "101"
         );
         assertNotNull(respPdf);
         assertEquals(TipoRespuestaChatbot.RESTRICCION_RBAC, respPdf.getTipo());
@@ -108,7 +108,7 @@ public class ChatbotServiceTest {
 
         // Intento de descargar Excel
         RespuestaChatbotDTO respExcel = chatbotService.procesarMensaje(
-                "descargar padron general en excel", RolUsuario.PRESIDENTE, "101"
+                "descargar padron general en excel", RolUsuario.RESIDENTE, "101"
         );
         assertNotNull(respExcel);
         assertEquals(TipoRespuestaChatbot.RESTRICCION_RBAC, respExcel.getTipo());
@@ -117,11 +117,11 @@ public class ChatbotServiceTest {
     }
 
     @Test
-    @DisplayName("Gerente y Limpieza deben consultar estado operativo y ejecutar CRUD de bitacora y visitas")
+    @DisplayName("Conserje y Limpieza deben consultar estado operativo y ejecutar CRUD de bitacora y visitas")
     public void testGerenteLimpiezaYOperaciones() {
         // Estado de limpieza de áreas comunes
         RespuestaChatbotDTO respLimpieza = chatbotService.procesarMensaje(
-                "estado de limpieza de áreas comunes y piscina", RolUsuario.GERENTE, "101"
+                "estado de limpieza de áreas comunes y piscina", RolUsuario.CONSERJE, "101"
         );
         assertNotNull(respLimpieza);
         assertEquals(TipoRespuestaChatbot.TEXTO, respLimpieza.getTipo());
@@ -129,7 +129,7 @@ public class ChatbotServiceTest {
 
         // CRUD de incidencias
         RespuestaChatbotDTO respIncidente = chatbotService.procesarMensaje(
-                "registrar incidente bombilla quemada en escalera torre B", RolUsuario.GERENTE, "101"
+                "registrar incidente bombilla quemada en escalera torre B", RolUsuario.CONSERJE, "101"
         );
         assertNotNull(respIncidente);
         assertEquals(TipoRespuestaChatbot.ACCION_CRUD, respIncidente.getTipo());
@@ -137,7 +137,7 @@ public class ChatbotServiceTest {
 
         // CRUD de visitas
         RespuestaChatbotDTO respVisita = chatbotService.procesarMensaje(
-                "registrar visita Juan Perez dni 87654321 depto 101 motivo delivery", RolUsuario.GERENTE, "101"
+                "registrar visita Juan Perez dni 87654321 depto 101 motivo delivery", RolUsuario.CONSERJE, "101"
         );
         assertNotNull(respVisita);
         assertEquals(TipoRespuestaChatbot.ACCION_CRUD, respVisita.getTipo());
@@ -145,10 +145,10 @@ public class ChatbotServiceTest {
     }
 
     @Test
-    @DisplayName("Gerente y Limpieza deben tener restricción estricta RBAC para exportar PDF/Excel contable")
+    @DisplayName("Conserje y Limpieza deben tener restricción estricta RBAC para exportar PDF/Excel contable")
     public void testGerenteRestriccionRbacFinanciera() {
         RespuestaChatbotDTO respPdf = chatbotService.procesarMensaje(
-                "exportar balance financiero pdf", RolUsuario.GERENTE, "101"
+                "exportar balance financiero pdf", RolUsuario.CONSERJE, "101"
         );
         assertNotNull(respPdf);
         assertEquals(TipoRespuestaChatbot.RESTRICCION_RBAC, respPdf.getTipo());
@@ -180,7 +180,7 @@ public class ChatbotServiceTest {
     @DisplayName("Modo Instructivo debe desencadenar la señal de Spotlight Tutorial")
     public void testModoInstructivoTrigger() {
         RespuestaChatbotDTO respTutorial = chatbotService.procesarMensaje(
-                "iniciar modo instructivo tutorial guiado", RolUsuario.PRESIDENTE, "101"
+                "iniciar modo instructivo tutorial guiado", RolUsuario.RESIDENTE, "101"
         );
         assertNotNull(respTutorial);
         assertEquals(TipoRespuestaChatbot.TUTORIAL_SPOTLIGHT, respTutorial.getTipo());

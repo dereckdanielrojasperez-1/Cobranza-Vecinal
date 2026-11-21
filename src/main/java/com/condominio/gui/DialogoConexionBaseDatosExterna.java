@@ -57,9 +57,7 @@ public class DialogoConexionBaseDatosExterna extends JDialog {
 
         // 2. Panel con Pestañas
         JTabbedPane pestañas = new JTabbedPane();
-        pestañas.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        pestañas.setBackground(EstilosUI.FONDO_TARJETA);
-        pestañas.setForeground(EstilosUI.TEXTO_PRINCIPAL);
+        EstilosUI.estilizarPestanas(pestañas, EstilosUI.AZUL_INFO);
 
         pestañas.addTab("Estado Actual", crearPanelEstadoActual());
         pestañas.addTab("Configurar Motor Externo", crearPanelConfiguracionMotor());
@@ -126,8 +124,8 @@ public class DialogoConexionBaseDatosExterna extends JDialog {
                 "  - DB_DRIVER: Clase del driver JDBC (ej: org.postgresql.Driver)"
         );
         infoText.setFont(new Font("Consolas", Font.PLAIN, 12));
-        infoText.setForeground(EstilosUI.TEXTO_SECUNDARIO);
-        infoText.setBackground(new Color(0x0C, 0x14, 0x1F));
+        infoText.setForeground(new Color(0xF1, 0xF5, 0xF9));
+        infoText.setBackground(new Color(0x07, 0x0E, 0x17));
         infoText.setEditable(false);
         infoText.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(EstilosUI.BORDE_LINEA),
@@ -154,23 +152,23 @@ public class DialogoConexionBaseDatosExterna extends JDialog {
         // Motor
         gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.3;
         JLabel lblMotor = new JLabel("Motor de Base de Datos:");
-        lblMotor.setFont(EstilosUI.FUENTE_TEXTO);
-        lblMotor.setForeground(EstilosUI.TEXTO_PRINCIPAL);
+        lblMotor.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblMotor.setForeground(new Color(0xBA, 0xE6, 0xFD));
         form.add(lblMotor, gbc);
 
         gbc.gridx = 1; gbc.weightx = 0.7;
         comboMotor = new JComboBox<>(new String[]{"PostgreSQL (Recomendado)", "MySQL / MariaDB"});
-        comboMotor.setFont(EstilosUI.FUENTE_TEXTO);
-        comboMotor.setBackground(EstilosUI.FONDO_CAMPO);
-        comboMotor.setForeground(EstilosUI.TEXTO_PRINCIPAL);
+        comboMotor.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        comboMotor.setBackground(new Color(0x12, 0x1C, 0x2A));
+        comboMotor.setForeground(Color.WHITE);
         comboMotor.addActionListener(e -> actualizarCamposPorMotor());
         form.add(comboMotor, gbc);
 
         // Host
         gbc.gridx = 0; gbc.gridy = 1;
         JLabel lblHost = new JLabel("Servidor Host / IP:");
-        lblHost.setFont(EstilosUI.FUENTE_TEXTO);
-        lblHost.setForeground(EstilosUI.TEXTO_PRINCIPAL);
+        lblHost.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblHost.setForeground(new Color(0xBA, 0xE6, 0xFD));
         form.add(lblHost, gbc);
 
         gbc.gridx = 1;
@@ -181,8 +179,8 @@ public class DialogoConexionBaseDatosExterna extends JDialog {
         // Puerto
         gbc.gridx = 0; gbc.gridy = 2;
         JLabel lblPuerto = new JLabel("Puerto:");
-        lblPuerto.setFont(EstilosUI.FUENTE_TEXTO);
-        lblPuerto.setForeground(EstilosUI.TEXTO_PRINCIPAL);
+        lblPuerto.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblPuerto.setForeground(new Color(0xBA, 0xE6, 0xFD));
         form.add(lblPuerto, gbc);
 
         gbc.gridx = 1;
@@ -193,8 +191,8 @@ public class DialogoConexionBaseDatosExterna extends JDialog {
         // Base de Datos
         gbc.gridx = 0; gbc.gridy = 3;
         JLabel lblBD = new JLabel("Nombre Base de Datos:");
-        lblBD.setFont(EstilosUI.FUENTE_TEXTO);
-        lblBD.setForeground(EstilosUI.TEXTO_PRINCIPAL);
+        lblBD.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblBD.setForeground(new Color(0xBA, 0xE6, 0xFD));
         form.add(lblBD, gbc);
 
         gbc.gridx = 1;
@@ -205,8 +203,8 @@ public class DialogoConexionBaseDatosExterna extends JDialog {
         // Usuario
         gbc.gridx = 0; gbc.gridy = 4;
         JLabel lblUser = new JLabel("Usuario:");
-        lblUser.setFont(EstilosUI.FUENTE_TEXTO);
-        lblUser.setForeground(EstilosUI.TEXTO_PRINCIPAL);
+        lblUser.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblUser.setForeground(new Color(0xBA, 0xE6, 0xFD));
         form.add(lblUser, gbc);
 
         gbc.gridx = 1;
@@ -217,15 +215,15 @@ public class DialogoConexionBaseDatosExterna extends JDialog {
         // Contraseña
         gbc.gridx = 0; gbc.gridy = 5;
         JLabel lblPass = new JLabel("Contraseña:");
-        lblPass.setFont(EstilosUI.FUENTE_TEXTO);
-        lblPass.setForeground(EstilosUI.TEXTO_PRINCIPAL);
+        lblPass.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblPass.setForeground(new Color(0xBA, 0xE6, 0xFD));
         form.add(lblPass, gbc);
 
         gbc.gridx = 1;
         txtPassword = new JPasswordField("123");
         txtPassword.setFont(EstilosUI.FUENTE_TEXTO);
-        txtPassword.setBackground(EstilosUI.FONDO_CAMPO);
-        txtPassword.setForeground(EstilosUI.TEXTO_PRINCIPAL);
+        txtPassword.setBackground(new Color(0x12, 0x1C, 0x2A));
+        txtPassword.setForeground(Color.WHITE);
         txtPassword.setCaretColor(EstilosUI.DORADO_PRINCIPAL);
         txtPassword.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(EstilosUI.BORDE_LINEA),
@@ -355,8 +353,8 @@ public class DialogoConexionBaseDatosExterna extends JDialog {
                 "     -Dspring.profiles.active=external"
         );
         txtGuia.setFont(new Font("Consolas", Font.PLAIN, 12));
-        txtGuia.setForeground(EstilosUI.TEXTO_SECUNDARIO);
-        txtGuia.setBackground(new Color(0x0C, 0x14, 0x1F));
+        txtGuia.setForeground(new Color(0xF1, 0xF5, 0xF9));
+        txtGuia.setBackground(new Color(0x07, 0x0E, 0x17));
         txtGuia.setEditable(false);
         txtGuia.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(EstilosUI.BORDE_LINEA),
@@ -374,11 +372,11 @@ public class DialogoConexionBaseDatosExterna extends JDialog {
 
         JLabel lblE = new JLabel(etiqueta);
         lblE.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblE.setForeground(EstilosUI.TEXTO_SECUNDARIO);
+        lblE.setForeground(new Color(0xBA, 0xE6, 0xFD));
 
         JLabel lblV = new JLabel(valor);
         lblV.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblV.setForeground(colorValor);
+        lblV.setForeground(colorValor != null ? colorValor : Color.WHITE);
 
         fila.add(lblE, BorderLayout.WEST);
         fila.add(lblV, BorderLayout.CENTER);

@@ -127,20 +127,7 @@ public class DialogoCatalogoPatrones extends JDialog {
 
         // 2. Panel central con pestanas
         JTabbedPane panelPestanas = new JTabbedPane();
-        panelPestanas.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        panelPestanas.setBackground(EstilosUI.FONDO_PRINCIPAL);
-        panelPestanas.setForeground(EstilosUI.TEXTO_PRINCIPAL);
-        panelPestanas.setUI(new BasicTabbedPaneUI() {
-            @Override
-            protected void installDefaults() {
-                super.installDefaults();
-                highlight = EstilosUI.BORDE_LINEA;
-                lightHighlight = EstilosUI.BORDE_LINEA;
-                shadow = EstilosUI.FONDO_PRINCIPAL;
-                darkShadow = EstilosUI.FONDO_PRINCIPAL;
-                focus = EstilosUI.DORADO_PRINCIPAL;
-            }
-        });
+        EstilosUI.estilizarPestanas(panelPestanas, EstilosUI.DORADO_PRINCIPAL);
 
         panelPestanas.addTab("Patrones Creacionales (5)", crearPanelCategoria("Creacional"));
         panelPestanas.addTab("Patrones Estructurales (5)", crearPanelCategoria("Estructural"));

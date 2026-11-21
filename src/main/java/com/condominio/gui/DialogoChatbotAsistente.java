@@ -224,10 +224,17 @@ public class DialogoChatbotAsistente extends JDialog {
     }
 
     private void actualizarPildorasSugerencia() {
+        actualizarPildorasSugerencia(null);
+    }
+
+    private void actualizarPildorasSugerencia(List<String> sugerenciasEspecificas) {
         panelSugerencias.removeAll();
         if (chatbotService == null) return;
 
-        List<String> sugerencias = chatbotService.obtenerSugerenciasPorRol(SesionActual.getRol());
+        List<String> sugerencias = (sugerenciasEspecificas != null && !sugerenciasEspecificas.isEmpty())
+                ? sugerenciasEspecificas
+                : chatbotService.obtenerSugerenciasPorRol(SesionActual.getRol());
+
         if (sugerencias != null) {
             for (String s : sugerencias) {
                 JButton pill = new JButton(s);
@@ -312,7 +319,7 @@ public class DialogoChatbotAsistente extends JDialog {
                         cargarHistorialInicial();
                     }
 
-                    actualizarPildorasSugerencia();
+                    actualizarPildorasSugerencia(respuesta.getSugerenciasAccion());
                     desplazarAlFinal();
                 } catch (Exception ex) {
                     log.error("Error al procesar respuesta del chatbot: {}", ex.getMessage());

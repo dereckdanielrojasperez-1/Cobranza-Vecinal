@@ -16,7 +16,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// Estrategia para el perfil Administrador: auditoria profunda, exportacion formal a PDF/Excel y comandos CRUD.
+// Estrategia para el perfil Administrador: auditoria profunda, exportacion formal a PDF/Excel,
+// comandos CRUD y motor de dialogo conversacional interactivo.
 @Slf4j
 public class ChatbotAdminStrategy implements IEstrategiaChatbot {
 
@@ -27,30 +28,32 @@ public class ChatbotAdminStrategy implements IEstrategiaChatbot {
 
     @Override
     public String generarMensajeBienvenida(String nombreUsuario) {
-        return "Bienvenido Administrador (" + (nombreUsuario != null ? nombreUsuario : "Admin") + "). " +
+        return "Bienvenido Administrador (" + (nombreUsuario != null ? nombreUsuario : "admin") + "). " +
                 "El módulo de supervisión integral está listo. Puede auditar costos, emitir vouchers de pago, " +
-                "exportar reportes a PDF o Excel y ejecutar acciones contables directamente.";
+                "exportar reportes a PDF o Excel, o preguntarme cualquier duda sobre cómo manejar el sistema.";
     }
 
     @Override
     public List<String> obtenerSugerenciasIniciales() {
         return Arrays.asList(
                 "Auditar recaudación y morosidad",
+                "Ayúdame a manejarlo",
                 "Generar voucher de pago Depto 101",
                 "Exportar ingresos y gastos a PDF",
                 "Exportar padrón de pagos a Excel",
-                "Examinar costos de servicios comunes",
                 "Iniciar modo instructivo"
         );
     }
 
     @Override
     public RespuestaChatbotDTO procesarConsulta(String mensaje, String deptoUsuario, ContextoChatbot contexto) {
-        String msg = (mensaje != null) ? mensaje.trim().toLowerCase() : "";
+        String msgOriginal = (mensaje != null) ? mensaje.trim() : "";
+        String norm = AsistenteConversacionalUtil.normalizar(msgOriginal);
         CobranzaFachada fachada = (contexto != null) ? contexto.getFachada() : null;
 
-        // 1. Solicitudes de Tutorial Guiado / Modo Instructivo
-        if (msg.contains("tutorial") || msg.contains("instructivo") || msg.contains("guia") || msg.contains("explicar")) {
+        // 1. Solicitudes de Tutorial Guiado / Modo Instructivo (o confirmación afirmativa para iniciar)
+        if (AsistenteConversacionalUtil.esSolicitudTutorial(norm) ||
+                (AsistenteConversacionalUtil.esConfirmacionAfirmativa(norm) && (norm.contains("tutorial") || norm.contains("instructivo") || norm.equals("si") || norm.equals("dale")))) {
             return RespuestaChatbotDTO.builder()
                     .textoRespuesta("Iniciando Modo Instructivo interactivo para Administrador. Resaltaremos en pantalla cada módulo y sus capacidades operativas.")
                     .tipo(TipoRespuestaChatbot.TUTORIAL_SPOTLIGHT)
@@ -59,52 +62,192 @@ public class ChatbotAdminStrategy implements IEstrategiaChatbot {
                     .build();
         }
 
-        // 2. Exportación de Vouchers de Pago en PDF
-        if ((msg.contains("voucher") || msg.contains("comprobante") || msg.contains("recibo")) &&
-                (msg.contains("pdf") || msg.contains("generar") || msg.contains("descargar") || msg.contains("exportar") || msg.contains("emitir"))) {
-            return procesarGeneracionVoucher(msg, contexto);
+        // 2. Ayuda de Manejo, Inducción y Orientación ("no sé manejar", "ayúdame a manejarlo", etc.)
+        if (AsistenteConversacionalUtil.esAyudaManejo(norm)) {
+            return AsistenteConversacionalUtil.responderAyudaManejo(RolUsuario.ADMINISTRADOR);
         }
 
-        // 3. Exportación general a PDF (Financiero, Morosidad, Estado de Cuenta)
-        if (msg.contains("pdf") || msg.contains("reporte pdf") || msg.contains("exportar pdf")) {
-            return procesarReportePdf(msg, contexto);
+        // 3. Saludos y Cortesía social ("hola", "que tal", "buenos días")
+        if (AsistenteConversacionalUtil.esSaludo(norm) && !norm.contains("pago") && !norm.contains("cuota") && !norm.contains("voucher")) {
+            return AsistenteConversacionalUtil.responderSaludo(RolUsuario.ADMINISTRADOR, "Administrador");
         }
 
-        // 4. Exportación a Excel / CSV
-        if (msg.contains("excel") || msg.contains("csv") || msg.contains("planilla") || msg.contains("exportar excel")) {
-            return procesarReporteExcel(msg, contexto);
+        // 4. Identidad y Capacidades del Asistente
+        if (AsistenteConversacionalUtil.esIdentidad(norm)) {
+            return AsistenteConversacionalUtil.responderIdentidad(RolUsuario.ADMINISTRADOR);
         }
 
-        // 5. Comandos CRUD conversacionales
-        if (msg.startsWith("emitir cuota") || msg.startsWith("generar cuota") || msg.startsWith("crear cuota")) {
-            return procesarEmitirCuota(mensaje, fachada);
-        }
-        if (msg.startsWith("registrar pago") || msg.startsWith("pagar cuota")) {
-            return procesarRegistrarPago(mensaje, fachada);
-        }
-        if (msg.startsWith("registrar incidente") || msg.startsWith("reportar averia")) {
-            return procesarRegistrarIncidente(mensaje, fachada);
+        // 5. Cortesía y Agradecimiento
+        if (AsistenteConversacionalUtil.esCortesiaOAgradecimiento(norm)) {
+            return AsistenteConversacionalUtil.responderCortesia();
         }
 
-        // 6. Auditoría Profunda de Costos, Gastos, Recibos y Balances
-        if (msg.contains("auditar") || msg.contains("costo") || msg.contains("gasto") || msg.contains("morosidad") ||
-                msg.contains("recaudacion") || msg.contains("balance") || msg.contains("resumen") || msg.contains("estado")) {
+        // 6. Despedida
+        if (AsistenteConversacionalUtil.esDespedida(norm)) {
+            return AsistenteConversacionalUtil.responderDespedida();
+        }
+
+        // 7. Preguntas de Dominio Frecuentes:
+        // A) ¿Cómo registrar un pago?
+        if (AsistenteConversacionalUtil.esPreguntaComoRegistrarPago(norm)) {
+            return RespuestaChatbotDTO.builder()
+                    .textoRespuesta("Para registrar un pago de cuota:\n\n" +
+                            "1. Directo desde el chat: Escribe 'registrar pago depto [número] monto [monto]' (ejemplo: 'registrar pago depto 101 monto 200').\n" +
+                            "2. Desde la interfaz gráfica: Ve a la barra lateral izquierda en 'Finanzas' -> 'Registro de Pagos', selecciona el departamento, la cuota pendiente, el método de pago y haz clic en 'Confirmar Pago'.\n" +
+                            "3. Luego de registrarlo puedes pedirme: 'generar voucher Depto 101' para emitir su recibo en PDF.")
+                    .tipo(TipoRespuestaChatbot.TEXTO)
+                    .reproducirAudio(true)
+                    .sugerenciasAccion(Arrays.asList("Registrar pago depto 101 monto 200", "Generar voucher Depto 101", "Auditar recaudación y morosidad"))
+                    .build();
+        }
+
+        // B) ¿Cómo emitir una cuota?
+        if (AsistenteConversacionalUtil.esPreguntaComoEmitirCuota(norm)) {
+            return RespuestaChatbotDTO.builder()
+                    .textoRespuesta("Para emitir una cuota ordinaria o extraordinaria:\n\n" +
+                            "1. Desde el chat: Escribe 'emitir cuota [número] monto [monto]' (ejemplo: 'emitir cuota 102 monto 250').\n" +
+                            "2. Desde la interfaz: En el menú lateral 'Finanzas' -> 'Generación de Cuotas', define el periodo, monto base, fecha de vencimiento y genera las cuotas masivas para toda la torre o para un departamento específico.")
+                    .tipo(TipoRespuestaChatbot.TEXTO)
+                    .reproducirAudio(true)
+                    .sugerenciasAccion(Arrays.asList("Emitir cuota 102 monto 200", "Auditar recaudación y morosidad", "Exportar padrón a Excel"))
+                    .build();
+        }
+
+        // C) Morosidad, intereses y penalidades
+        if (AsistenteConversacionalUtil.esPreguntaMorosidad(norm)) {
+            return RespuestaChatbotDTO.builder()
+                    .textoRespuesta("Gestión de Morosidad y Deudas del Condominio:\n\n" +
+                            "1. Vencimiento Automático: Cuando una cuota sobrepasa su fecha de vencimiento sin ser cancelada, el sistema calcula un recargo porcentual por mora y cambia el estado a 'MOROSO'.\n" +
+                            "2. Restricciones Operativas: Los residentes con mora quedan automáticamente inhabilitados para reservar áreas comunes (parrillas, piscina, sala de eventos).\n" +
+                            "3. Seguimiento: Puedes revisar el monto total pendiente diciendo 'auditar morosidad' o descargar la lista oficial con 'exportar reporte a PDF'.")
+                    .tipo(TipoRespuestaChatbot.TEXTO)
+                    .reproducirAudio(true)
+                    .sugerenciasAccion(Arrays.asList("Auditar recaudación y morosidad", "Exportar reporte a PDF", "Ver departamentos"))
+                    .build();
+        }
+
+        // D) Gastos comunes y presupuesto
+        if (AsistenteConversacionalUtil.esPreguntaGastosYPresupuesto(norm)) {
+            return RespuestaChatbotDTO.builder()
+                    .textoRespuesta("Gastos Comunes y Presupuesto Operativo:\n\n" +
+                            "- Los gastos comunes corresponden a los egresos del condominio: energía eléctrica de áreas comunes, agua de bombas/cisterna, seguridad 24/7, personal de limpieza y mantenimiento de ascensores.\n" +
+                            "- Se distribuyen equitativamente o por alícuota entre los departamentos para formar la cuota de mantenimiento mensual.\n" +
+                            "- Puedes examinar el detalle de los egresos registrados diciendo 'examinar costos de servicios comunes' o 'exportar ingresos y gastos a PDF'.")
+                    .tipo(TipoRespuestaChatbot.TEXTO)
+                    .reproducirAudio(true)
+                    .sugerenciasAccion(Arrays.asList("Examinar costos de servicios comunes", "Auditar recaudación y morosidad", "Exportar ingresos y gastos a PDF"))
+                    .build();
+        }
+
+        // E) Módulos y navegación del sistema
+        if (AsistenteConversacionalUtil.esPreguntaModulosSistema(norm)) {
+            return RespuestaChatbotDTO.builder()
+                    .textoRespuesta("Estructura de Módulos del Sistema Cobranza Vecinal:\n\n" +
+                            "- Dashboard: Visión global de ingresos, cuotas pagadas y estado del condominio.\n" +
+                            "- Finanzas: Emisión de cuotas, cobro de mantenimiento, mora, vouchers PDF y conciliación.\n" +
+                            "- Inmuebles: Padrón de torres, departamentos, metros cuadrados, propietarios e inquilinos.\n" +
+                            "- Operaciones: Bitácora de incidencias físicas, garita de portería y turnos de áreas comunes.\n" +
+                            "- Reportes: Generación de balances en PDF y planillas Excel.\n\n" +
+                            "Puedes solicitar 'iniciar modo instructivo' para que te resalte cada uno en vivo.")
+                    .tipo(TipoRespuestaChatbot.TEXTO)
+                    .reproducirAudio(true)
+                    .sugerenciasAccion(Arrays.asList("Iniciar modo instructivo", "Auditar recaudación", "Exportar padrón de pagos a Excel"))
+                    .build();
+        }
+
+        // F) Cómo exportar reportes
+        if (AsistenteConversacionalUtil.esPreguntaComoExportar(norm)) {
+            return RespuestaChatbotDTO.builder()
+                    .textoRespuesta("Generación y Descarga de Reportes:\n\n" +
+                            "1. Formato PDF: Puedes solicitar 'exportar reporte a PDF' (para el balance financiero) o 'generar voucher Depto 101' (para un recibo específico).\n" +
+                            "2. Formato Excel: Solicita 'exportar padrón a Excel' para descargar la base de datos completa de cuotas y cobros.\n" +
+                            "3. Ubicación: Los archivos se guardan en la carpeta oficial ./exportaciones y el chat te mostrará un botón directo para abrirlos.")
+                    .tipo(TipoRespuestaChatbot.TEXTO)
+                    .reproducirAudio(true)
+                    .sugerenciasAccion(Arrays.asList("Exportar reporte a PDF", "Exportar padrón de pagos a Excel", "Generar voucher Depto 101"))
+                    .build();
+        }
+
+        // G) Modo Voz y Atajos
+        if (AsistenteConversacionalUtil.esPreguntaVoz(norm)) {
+            return RespuestaChatbotDTO.builder()
+                    .textoRespuesta("Funcionalidad de Voz y Atajos:\n\n" +
+                            "- Para encender la voz di 'activar voz' o pulsa el botón 'Voz: OFF' en la cabecera. El asistente hablará en español sintetizado.\n" +
+                            "- Para apagarla di 'desactivar voz'.\n" +
+                            "- Para vaciar el historial di 'limpiar chat' o pulsa el botón 'Limpiar Chat'.\n" +
+                            "- Presiona Enter en el teclado para enviar consultas rápidamente.")
+                    .tipo(TipoRespuestaChatbot.TEXTO)
+                    .reproducirAudio(true)
+                    .sugerenciasAccion(Arrays.asList("Activar voz", "Limpiar chat", "Iniciar modo instructivo"))
+                    .build();
+        }
+
+        // 8. Exportación de Vouchers de Pago en PDF
+        if ((norm.contains("voucher") || norm.contains("comprobante") || norm.contains("recibo")) &&
+                (norm.contains("pdf") || norm.contains("generar") || norm.contains("descargar") || norm.contains("exportar") || norm.contains("emitir") || norm.contains("depto") || norm.contains("101"))) {
+            return procesarGeneracionVoucher(norm, contexto);
+        }
+
+        // 9. Exportación general a PDF (Financiero, Morosidad, Estado de Cuenta)
+        if (norm.contains("pdf") || norm.contains("reporte pdf") || norm.contains("exportar pdf") || norm.contains("resumen ingresos")) {
+            return procesarReportePdf(norm, contexto);
+        }
+
+        // 10. Exportación a Excel / CSV
+        if (norm.contains("excel") || norm.contains("csv") || norm.contains("planilla") || norm.contains("exportar excel")) {
+            return procesarReporteExcel(norm, contexto);
+        }
+
+        // 11. Comandos CRUD conversacionales
+        if (norm.startsWith("emitir cuota") || norm.startsWith("generar cuota") || norm.startsWith("crear cuota")) {
+            return procesarEmitirCuota(msgOriginal, fachada);
+        }
+        if (norm.startsWith("registrar pago") || norm.startsWith("pagar cuota")) {
+            return procesarRegistrarPago(msgOriginal, fachada);
+        }
+        if (norm.startsWith("registrar incidente") || norm.startsWith("reportar averia")) {
+            return procesarRegistrarIncidente(msgOriginal, fachada);
+        }
+
+        // 12. Auditoría Profunda de Costos, Gastos, Recibos y Balances
+        if (norm.contains("auditar") || norm.contains("costo") || norm.contains("gasto") || norm.contains("morosidad") ||
+                norm.contains("recaudacion") || norm.contains("balance") || norm.contains("resumen financiero") || norm.contains("estado financiero")) {
             return procesarAuditoriaCostos(fachada);
         }
 
-        // 7. Padrón inmobiliario y residentes
-        if (msg.contains("inmueble") || msg.contains("departamento") || msg.contains("torre") || msg.contains("residente") || msg.contains("padron")) {
+        // 13. Padrón inmobiliario y residentes
+        if (norm.contains("inmueble") || norm.contains("departamento") || norm.contains("torre") || norm.contains("residente") || norm.contains("padron")) {
             return procesarConsultaInmuebles(fachada);
         }
 
-        // 8. Respuesta general informativa para Administrador
+        // 14. Fallback Contextual e Inteligente (limpio y no repetitivo)
+        List<String> sugerenciasFallback = Arrays.asList(
+                "Auditar recaudación y morosidad",
+                "Ayúdame a manejarlo",
+                "Generar voucher Depto 101",
+                "Exportar reporte a PDF",
+                "Iniciar modo instructivo"
+        );
+
+        String orientacion;
+        if (norm.contains("dinero") || norm.contains("caja") || norm.contains("cuenta") || norm.contains("banco") || norm.contains("soles")) {
+            orientacion = "Respecto al balance financiero del condominio, puedes auditar los números actuales diciendo 'auditar recaudación', 'exportar ingresos a PDF' o 'exportar padrón a Excel'.";
+        } else if (norm.contains("puerta") || norm.contains("garita") || norm.contains("llave") || norm.contains("camara") || norm.contains("limpieza")) {
+            orientacion = "Para novedades de infraestructura y portería, puedes registrar novedades con 'registrar incidente [descripción]' o revisar la bitácora operativa en el menú Operaciones.";
+        } else {
+            orientacion = "He recibido tu consulta. Para el perfil Administrador puedo asistirte con:\n\n" +
+                    "- 'Auditar recaudación y morosidad' (balance y cuotas al día).\n" +
+                    "- 'Generar voucher Depto 101' (emisión de recibo PDF).\n" +
+                    "- 'Exportar reporte a PDF' o 'Exportar a Excel' (descargas oficiales).\n" +
+                    "- 'Emitir cuota 102 monto 200' o 'Registrar pago depto 101 monto 200'.\n" +
+                    "- O decirme 'ayúdame a manejarlo' para un recorrido paso a paso.";
+        }
+
         return RespuestaChatbotDTO.builder()
-                .textoRespuesta("Consulta procesada en módulo administrativo. Puede solicitar: 'auditar recaudación', " +
-                        "'generar voucher Depto 101', 'exportar reporte a PDF', 'exportar a Excel', " +
-                        "o escribir 'emitir cuota [depto] monto [monto]'.")
+                .textoRespuesta(orientacion)
                 .tipo(TipoRespuestaChatbot.TEXTO)
                 .reproducirAudio(true)
-                .sugerenciasAccion(obtenerSugerenciasIniciales())
+                .sugerenciasAccion(sugerenciasFallback)
                 .build();
     }
 
@@ -132,6 +275,7 @@ public class ChatbotAdminStrategy implements IEstrategiaChatbot {
                     .archivoGenerado(pdfVoucher)
                     .comandoEjecutado("GENERAR_VOUCHER_PDF")
                     .reproducirAudio(true)
+                    .sugerenciasAccion(Arrays.asList("Auditar recaudación y morosidad", "Exportar reporte a PDF", "Generar voucher Depto 102"))
                     .build();
         } catch (Exception ex) {
             log.error("Error al generar voucher PDF: {}", ex.getMessage());
@@ -175,6 +319,7 @@ public class ChatbotAdminStrategy implements IEstrategiaChatbot {
                     .archivoGenerado(archivo)
                     .comandoEjecutado("EXPORTAR_PDF")
                     .reproducirAudio(true)
+                    .sugerenciasAccion(Arrays.asList("Exportar padrón de pagos a Excel", "Auditar recaudación y morosidad", "Generar voucher Depto 101"))
                     .build();
         } catch (Exception ex) {
             log.error("Fallo al exportar reporte PDF: {}", ex.getMessage());
@@ -248,6 +393,7 @@ public class ChatbotAdminStrategy implements IEstrategiaChatbot {
                     .archivoGenerado(archivoExcel)
                     .comandoEjecutado("EXPORTAR_EXCEL")
                     .reproducirAudio(true)
+                    .sugerenciasAccion(Arrays.asList("Exportar reporte a PDF", "Auditar recaudación y morosidad", "Generar voucher Depto 101"))
                     .build();
         } catch (Exception ex) {
             log.error("Fallo al exportar planilla Excel: {}", ex.getMessage());
@@ -311,6 +457,7 @@ public class ChatbotAdminStrategy implements IEstrategiaChatbot {
                 .tipo(TipoRespuestaChatbot.TEXTO)
                 .comandoEjecutado("AUDITORIA_FINANCIERA")
                 .reproducirAudio(true)
+                .sugerenciasAccion(Arrays.asList("Exportar reporte a PDF", "Exportar padrón a Excel", "Generar voucher Depto 101"))
                 .build();
     }
 
@@ -322,9 +469,10 @@ public class ChatbotAdminStrategy implements IEstrategiaChatbot {
         int total = (inmuebles != null) ? inmuebles.size() : 0;
         return RespuestaChatbotDTO.builder()
                 .textoRespuesta("El condominio cuenta con " + total + " departamentos registrados en el padrón oficial. " +
-                        "Puede consultar un departamento específico o exportar el padrón inmobiliario a Excel.")
+                        "Puede consultar un departamento específico, emitir cuotas o exportar el padrón inmobiliario a Excel.")
                 .tipo(TipoRespuestaChatbot.TEXTO)
                 .reproducirAudio(true)
+                .sugerenciasAccion(Arrays.asList("Exportar padrón de pagos a Excel", "Auditar recaudación y morosidad", "Generar voucher Depto 101"))
                 .build();
     }
 
@@ -344,6 +492,7 @@ public class ChatbotAdminStrategy implements IEstrategiaChatbot {
                     .tipo(TipoRespuestaChatbot.ACCION_CRUD)
                     .comandoEjecutado("EMITIR_CUOTA")
                     .reproducirAudio(true)
+                    .sugerenciasAccion(Arrays.asList("Auditar recaudación y morosidad", "Generar voucher Depto " + depto, "Exportar padrón a Excel"))
                     .build();
         } catch (Exception ex) {
             return RespuestaChatbotDTO.builder()
@@ -370,6 +519,7 @@ public class ChatbotAdminStrategy implements IEstrategiaChatbot {
                         .tipo(TipoRespuestaChatbot.ACCION_CRUD)
                         .comandoEjecutado("REGISTRAR_PAGO")
                         .reproducirAudio(true)
+                        .sugerenciasAccion(Arrays.asList("Generar voucher de pago Depto 101", "Auditar recaudación y morosidad", "Exportar reporte a PDF"))
                         .build();
             } else {
                 return RespuestaChatbotDTO.builder()
@@ -400,6 +550,7 @@ public class ChatbotAdminStrategy implements IEstrategiaChatbot {
                 .tipo(TipoRespuestaChatbot.ACCION_CRUD)
                 .comandoEjecutado("REGISTRAR_INCIDENTE")
                 .reproducirAudio(true)
+                .sugerenciasAccion(Arrays.asList("Auditar recaudación y morosidad", "Ver incidencias abiertas", "Iniciar modo instructivo"))
                 .build();
     }
 

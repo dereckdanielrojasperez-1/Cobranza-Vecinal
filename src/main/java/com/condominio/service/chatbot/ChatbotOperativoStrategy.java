@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// Estrategia para perfiles de Gerencia Operativa, Mantenimiento, Limpieza y Conserjeria:
+// Estrategia para perfiles de Conserjeria, Porteria, Mantenimiento y Limpieza:
 // Monitoreo de instalaciones, bitacora de novedades, CRUD operativo y restriccion RBAC financiera.
 public class ChatbotOperativoStrategy implements IEstrategiaChatbot {
 
@@ -22,7 +22,7 @@ public class ChatbotOperativoStrategy implements IEstrategiaChatbot {
 
     @Override
     public String generarMensajeBienvenida(String nombreUsuario) {
-        return "Bienvenido al Centro de Control Operativo (" + (nombreUsuario != null ? nombreUsuario : "Gerente / Limpieza") + "). " +
+        return "Bienvenido al Centro de Control Operativo (" + (nombreUsuario != null ? nombreUsuario : "Conserje / Operaciones") + "). " +
                 "Puedo informarle sobre el estado de las áreas comunes, bitácora de limpieza, visitas registradas en garita " +
                 "o permitirle registrar incidencias y visitas mediante comandos conversacionales.";
     }
@@ -31,6 +31,7 @@ public class ChatbotOperativoStrategy implements IEstrategiaChatbot {
     public List<String> obtenerSugerenciasIniciales() {
         return Arrays.asList(
                 "Estado de limpieza y áreas comunes",
+                "Ayúdame a manejarlo",
                 "Ver incidencias y averías abiertas",
                 "Consultar visitas del día en portería",
                 "Registrar nueva incidencia de mantenimiento",
@@ -40,12 +41,13 @@ public class ChatbotOperativoStrategy implements IEstrategiaChatbot {
 
     @Override
     public RespuestaChatbotDTO procesarConsulta(String mensaje, String deptoUsuario, ContextoChatbot contexto) {
-        String msg = (mensaje != null) ? mensaje.trim().toLowerCase() : "";
+        String msgOriginal = (mensaje != null) ? mensaje.trim() : "";
+        String norm = AsistenteConversacionalUtil.normalizar(msgOriginal);
         CobranzaFachada fachada = (contexto != null) ? contexto.getFachada() : null;
 
         // 1. RESTRICCIÓN ESTRICTA RBAC: Exportación de finanzas a PDF, Excel o Word y cuotas
-        if (msg.contains("pdf") || msg.contains("excel") || msg.contains("csv") || msg.contains("word") ||
-                msg.contains("exportar financiero") || msg.contains("voucher contable") || msg.contains("balance contable")) {
+        if (norm.contains("pdf") || norm.contains("excel") || norm.contains("csv") || norm.contains("word") ||
+                norm.contains("exportar financiero") || norm.contains("voucher contable") || norm.contains("balance contable")) {
             return RespuestaChatbotDTO.builder()
                     .textoRespuesta("Acceso Restringido por Política RBAC:\n" +
                             "El perfil Gerente / Limpieza está facultado para la supervisión física de la infraestructura, " +
@@ -58,7 +60,8 @@ public class ChatbotOperativoStrategy implements IEstrategiaChatbot {
         }
 
         // 2. Solicitudes de Tutorial Guiado / Modo Instructivo
-        if (msg.contains("tutorial") || msg.contains("instructivo") || msg.contains("guia") || msg.contains("explicar")) {
+        if (AsistenteConversacionalUtil.esSolicitudTutorial(norm) ||
+                (AsistenteConversacionalUtil.esConfirmacionAfirmativa(norm) && (norm.contains("tutorial") || norm.contains("instructivo") || norm.equals("si") || norm.equals("dale")))) {
             return RespuestaChatbotDTO.builder()
                     .textoRespuesta("Iniciando Modo Instructivo para personal Operativo y de Mantenimiento. Conoceremos el flujo de bitácora, registro de garita y reportes.")
                     .tipo(TipoRespuestaChatbot.TUTORIAL_SPOTLIGHT)
@@ -67,37 +70,77 @@ public class ChatbotOperativoStrategy implements IEstrategiaChatbot {
                     .build();
         }
 
-        // 3. Estado de Limpieza y Áreas Comunes
-        if (msg.contains("limpieza") || msg.contains("area") || msg.contains("piscina") ||
-                msg.contains("gimnasio") || msg.contains("terraza") || msg.contains("ascensor") || msg.contains("instalacion")) {
+        // 3. Ayuda de Manejo e Inducción ("no sé manejar", "ayúdame a usarlo")
+        if (AsistenteConversacionalUtil.esAyudaManejo(norm)) {
+            return AsistenteConversacionalUtil.responderAyudaManejo(RolUsuario.CONSERJE);
+        }
+
+        // 4. Saludos y Cortesía social
+        if (AsistenteConversacionalUtil.esSaludo(norm) && !norm.contains("limpieza") && !norm.contains("visita") && !norm.contains("incidente")) {
+            return AsistenteConversacionalUtil.responderSaludo(RolUsuario.CONSERJE, "Conserje");
+        }
+
+        // 5. Identidad y Capacidades
+        if (AsistenteConversacionalUtil.esIdentidad(norm)) {
+            return AsistenteConversacionalUtil.responderIdentidad(RolUsuario.CONSERJE);
+        }
+
+        // 6. Cortesía y Agradecimiento
+        if (AsistenteConversacionalUtil.esCortesiaOAgradecimiento(norm)) {
+            return AsistenteConversacionalUtil.responderCortesia();
+        }
+
+        // 7. Despedida
+        if (AsistenteConversacionalUtil.esDespedida(norm)) {
+            return AsistenteConversacionalUtil.responderDespedida();
+        }
+
+        // 8. Contactos de Emergencia (Serenazgo, Bomberos, Policía)
+        if (norm.contains("emergencia") || norm.contains("policia") || norm.contains("bomberos") || norm.contains("serenazgo") || norm.contains("ambulancia")) {
+            return RespuestaChatbotDTO.builder()
+                    .textoRespuesta("DIRECTORIO TELEFONICO DE EMERGENCIAS (LIMA):\n\n" +
+                            "- Central de Policía Nacional (PNP): 105\n" +
+                            "- Bomberos Voluntarios del Perú: 116\n" +
+                            "- Serenazgo y Seguridad Ciudadana: 01-318-5050 / Central Distrito: 147\n" +
+                            "- Sistema SAMU (Ambulancias): 106\n" +
+                            "- Administración del Condominio (Guardia): Anexo 100 / Celular: +51 987-654-321")
+                    .tipo(TipoRespuestaChatbot.TEXTO)
+                    .reproducirAudio(true)
+                    .sugerenciasAccion(Arrays.asList("Estado de limpieza y áreas comunes", "Ver incidencias abiertas", "Iniciar modo instructivo"))
+                    .build();
+        }
+
+        // 9. Estado de Limpieza y Áreas Comunes
+        if (norm.contains("limpieza") || norm.contains("area") || norm.contains("piscina") ||
+                norm.contains("gimnasio") || norm.contains("terraza") || norm.contains("ascensor") || norm.contains("instalacion")) {
             return procesarEstadoLimpieza(fachada);
         }
 
-        // 4. Consulta de Incidencias Operativas
-        if (msg.contains("incidente") || msg.contains("averia") || msg.contains("reparacion") || msg.contains("falla")) {
-            if (msg.startsWith("registrar") || msg.startsWith("reportar") || msg.startsWith("crear")) {
-                return procesarRegistrarIncidente(mensaje, fachada);
+        // 10. Consulta o Registro de Incidencias Operativas
+        if (norm.contains("incidente") || norm.contains("averia") || norm.contains("reparacion") || norm.contains("falla")) {
+            if (norm.startsWith("registrar") || norm.startsWith("reportar") || norm.startsWith("crear")) {
+                return procesarRegistrarIncidente(msgOriginal, fachada);
             }
             return procesarConsultaIncidentes(fachada);
         }
 
-        // 5. Control de Visitas y Garita
-        if (msg.contains("visita") || msg.contains("garita") || msg.contains("porteria") || msg.contains("ingreso")) {
-            if (msg.startsWith("registrar") || msg.startsWith("ingresar")) {
-                return procesarRegistrarVisita(mensaje, fachada);
+        // 11. Control de Visitas y Garita
+        if (norm.contains("visita") || norm.contains("garita") || norm.contains("porteria") || norm.contains("ingreso")) {
+            if (norm.startsWith("registrar") || norm.startsWith("ingresar")) {
+                return procesarRegistrarVisita(msgOriginal, fachada);
             }
             return procesarConsultaVisitas(fachada);
         }
 
-        // 6. Comandos CRUD conversacionales
-        if (msg.startsWith("registrar incidente") || msg.startsWith("reportar averia")) {
-            return procesarRegistrarIncidente(mensaje, fachada);
+        // 12. Comandos CRUD conversacionales
+        if (norm.startsWith("registrar incidente") || norm.startsWith("reportar averia")) {
+            return procesarRegistrarIncidente(msgOriginal, fachada);
         }
-        if (msg.startsWith("registrar visita")) {
-            return procesarRegistrarVisita(mensaje, fachada);
+        if (norm.startsWith("registrar visita")) {
+            return procesarRegistrarVisita(msgOriginal, fachada);
         }
 
-        // 7. Respuesta Informativa Operativa
+        // 13. Respuesta Informativa Operativa Fallback
         return RespuestaChatbotDTO.builder()
                 .textoRespuesta("Módulo Operativo listo. Puede consultar: 'estado de limpieza', " +
                         "'ver incidencias abiertas', 'visitas del día', o ejecutar: " +
@@ -127,6 +170,7 @@ public class ChatbotOperativoStrategy implements IEstrategiaChatbot {
                 .textoRespuesta(sb.toString())
                 .tipo(TipoRespuestaChatbot.TEXTO)
                 .reproducirAudio(true)
+                .sugerenciasAccion(Arrays.asList("Ver incidencias abiertas", "Registrar nueva incidencia", "Consultar visitas del día"))
                 .build();
     }
 
@@ -154,6 +198,7 @@ public class ChatbotOperativoStrategy implements IEstrategiaChatbot {
                 .textoRespuesta(sb.toString())
                 .tipo(TipoRespuestaChatbot.TEXTO)
                 .reproducirAudio(true)
+                .sugerenciasAccion(Arrays.asList("Registrar nueva incidencia", "Estado de limpieza y áreas comunes", "Consultar visitas del día"))
                 .build();
     }
 
@@ -186,6 +231,7 @@ public class ChatbotOperativoStrategy implements IEstrategiaChatbot {
                 .textoRespuesta(sb.toString())
                 .tipo(TipoRespuestaChatbot.TEXTO)
                 .reproducirAudio(true)
+                .sugerenciasAccion(Arrays.asList("Registrar visita", "Ver incidencias abiertas", "Estado de limpieza y áreas comunes"))
                 .build();
     }
 
@@ -206,6 +252,7 @@ public class ChatbotOperativoStrategy implements IEstrategiaChatbot {
                 .tipo(TipoRespuestaChatbot.ACCION_CRUD)
                 .comandoEjecutado("REGISTRAR_INCIDENTE")
                 .reproducirAudio(true)
+                .sugerenciasAccion(Arrays.asList("Ver incidencias abiertas", "Estado de limpieza y áreas comunes", "Iniciar modo instructivo"))
                 .build();
     }
 
@@ -227,6 +274,7 @@ public class ChatbotOperativoStrategy implements IEstrategiaChatbot {
                     .tipo(TipoRespuestaChatbot.ACCION_CRUD)
                     .comandoEjecutado("REGISTRAR_VISITA")
                     .reproducirAudio(true)
+                    .sugerenciasAccion(Arrays.asList("Consultar visitas del día en portería", "Ver incidencias abiertas", "Estado de limpieza"))
                     .build();
         } catch (Exception ex) {
             return RespuestaChatbotDTO.builder()

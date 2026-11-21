@@ -1,7 +1,6 @@
 package com.condominio.service.chatbot;
 
 import com.condominio.dto.CuotaDTO;
-import com.condominio.modelo.financiero.GastoComun;
 import com.condominio.modelo.operaciones.Comunicado;
 import com.condominio.modelo.seguridad.RolUsuario;
 import com.condominio.patrones.facade.CobranzaFachada;
@@ -10,7 +9,8 @@ import java.util.Arrays;
 import java.util.List;
 
 // Estrategia para el perfil Presidente de la Junta Directiva y Residentes:
-// Orientacion de pagos (Yape, Plin, BCP), desglose de consumos personales y estricta restriccion RBAC.
+// Orientacion de pagos (Yape, Plin, BCP), desglose de consumos personales,
+// atencion a dudas de convivencia y estricta restriccion RBAC financiera.
 public class ChatbotPresidenteStrategy implements IEstrategiaChatbot {
 
     @Override
@@ -29,6 +29,7 @@ public class ChatbotPresidenteStrategy implements IEstrategiaChatbot {
     public List<String> obtenerSugerenciasIniciales() {
         return Arrays.asList(
                 "¿Cómo pagar con Yape o Plin?",
+                "Ayúdame a manejarlo",
                 "Consultar mi consumo y cuotas de mi piso",
                 "Ver comunicados oficiales de la junta",
                 "¿Cuáles son las cuentas del BCP y BBVA?",
@@ -38,13 +39,14 @@ public class ChatbotPresidenteStrategy implements IEstrategiaChatbot {
 
     @Override
     public RespuestaChatbotDTO procesarConsulta(String mensaje, String deptoUsuario, ContextoChatbot contexto) {
-        String msg = (mensaje != null) ? mensaje.trim().toLowerCase() : "";
+        String msgOriginal = (mensaje != null) ? mensaje.trim() : "";
+        String norm = AsistenteConversacionalUtil.normalizar(msgOriginal);
         CobranzaFachada fachada = (contexto != null) ? contexto.getFachada() : null;
         String depto = (deptoUsuario != null && !deptoUsuario.isBlank()) ? deptoUsuario : "101";
 
         // 1. RESTRICCIÓN ESTRICTA RBAC: Exportación de reportes financieros a PDF, Excel o Word
-        if (msg.contains("pdf") || msg.contains("excel") || msg.contains("csv") || msg.contains("word") ||
-                msg.contains("exportar") || msg.contains("descargar reporte") || msg.contains("imprimir voucher")) {
+        if (norm.contains("pdf") || norm.contains("excel") || norm.contains("csv") || norm.contains("word") ||
+                norm.contains("exportar") || norm.contains("descargar reporte") || norm.contains("imprimir voucher")) {
             return RespuestaChatbotDTO.builder()
                     .textoRespuesta("Acceso Restringido por Política de Seguridad RBAC:\n" +
                             "Estimado Presidente / Vecino, la exportación y generación de reportes financieros oficiales " +
@@ -58,8 +60,8 @@ public class ChatbotPresidenteStrategy implements IEstrategiaChatbot {
         }
 
         // 2. Solicitudes de Tutorial Guiado / Modo Instructivo
-        if (msg.contains("tutorial") || msg.contains("instructivo") || msg.contains("guia") ||
-                msg.contains("explicar") || msg.contains("como usar") || msg.contains("botones")) {
+        if (AsistenteConversacionalUtil.esSolicitudTutorial(norm) ||
+                (AsistenteConversacionalUtil.esConfirmacionAfirmativa(norm) && (norm.contains("tutorial") || norm.contains("instructivo") || norm.equals("si") || norm.equals("dale")))) {
             return RespuestaChatbotDTO.builder()
                     .textoRespuesta("Iniciando Modo Instructivo para Presidente de Junta. Se resaltará en pantalla cada botón y carpeta, oscureciendo el fondo para brindarle una guía paso a paso.")
                     .tipo(TipoRespuestaChatbot.TUTORIAL_SPOTLIGHT)
@@ -68,25 +70,63 @@ public class ChatbotPresidenteStrategy implements IEstrategiaChatbot {
                     .build();
         }
 
-        // 3. Métodos de Pago: Yape, Plin, BCP, BBVA, Interbank
-        if (msg.contains("como pagar") || msg.contains("metodo") || msg.contains("yape") || msg.contains("plin") ||
-                msg.contains("bcp") || msg.contains("bbva") || msg.contains("cuenta") || msg.contains("transferencia")) {
+        // 3. Ayuda de Manejo e Inducción ("no sé manejar", "ayúdame a usarlo")
+        if (AsistenteConversacionalUtil.esAyudaManejo(norm)) {
+            return AsistenteConversacionalUtil.responderAyudaManejo(RolUsuario.RESIDENTE);
+        }
+
+        // 4. Saludos y Cortesía social
+        if (AsistenteConversacionalUtil.esSaludo(norm) && !norm.contains("pago") && !norm.contains("consumo")) {
+            return AsistenteConversacionalUtil.responderSaludo(RolUsuario.RESIDENTE, "Presidente / Vecino");
+        }
+
+        // 5. Identidad y Capacidades
+        if (AsistenteConversacionalUtil.esIdentidad(norm)) {
+            return AsistenteConversacionalUtil.responderIdentidad(RolUsuario.RESIDENTE);
+        }
+
+        // 6. Cortesía y Agradecimiento
+        if (AsistenteConversacionalUtil.esCortesiaOAgradecimiento(norm)) {
+            return AsistenteConversacionalUtil.responderCortesia();
+        }
+
+        // 7. Despedida
+        if (AsistenteConversacionalUtil.esDespedida(norm)) {
+            return AsistenteConversacionalUtil.responderDespedida();
+        }
+
+        // 8. Métodos de Pago: Yape, Plin, BCP, BBVA, Interbank
+        if (norm.contains("como pagar") || norm.contains("metodo") || norm.contains("yape") || norm.contains("plin") ||
+                norm.contains("bcp") || norm.contains("bbva") || norm.contains("cuenta") || norm.contains("transferencia")) {
             return procesarMetodosDePago();
         }
 
-        // 4. Consulta de Consumo, Piso, Departamento y Cuotas
-        if (msg.contains("consumo") || msg.contains("piso") || msg.contains("depto") || msg.contains("cuota") ||
-                msg.contains("deuda") || msg.contains("cuanto debo") || msg.contains("saldo") || msg.contains("luz") || msg.contains("agua")) {
+        // 9. Consulta de Consumo, Piso, Departamento y Cuotas
+        if (norm.contains("consumo") || norm.contains("piso") || norm.contains("depto") || norm.contains("cuota") ||
+                norm.contains("deuda") || norm.contains("cuanto debo") || norm.contains("saldo") || norm.contains("luz") || norm.contains("agua")) {
             return procesarConsultaConsumo(depto, fachada);
         }
 
-        // 5. Comunicados Oficiales y Fechas del Condominio
-        if (msg.contains("comunicado") || msg.contains("aviso") || msg.contains("asamblea") || msg.contains("fecha") ||
-                msg.contains("circular") || msg.contains("reunion") || msg.contains("junta")) {
+        // 10. Comunicados Oficiales, Fechas y Asambleas
+        if (norm.contains("comunicado") || norm.contains("aviso") || norm.contains("asamblea") || norm.contains("fecha") ||
+                norm.contains("circular") || norm.contains("reunion") || norm.contains("junta")) {
             return procesarComunicados(fachada);
         }
 
-        // 6. Respuesta General Amigable
+        // 11. Reserva de Áreas Comunes (Parrillas, Piscina, Sala de Eventos)
+        if (norm.contains("reserva") || norm.contains("parrilla") || norm.contains("piscina") || norm.contains("area comun") || norm.contains("alquilar")) {
+            return RespuestaChatbotDTO.builder()
+                    .textoRespuesta("Reserva de Áreas Comunes:\n\n" +
+                            "- Como residente al día con tus cuotas, puedes solicitar el uso de la Zona de Parrillas y Terraza o la Piscina.\n" +
+                            "- Para reservar: Ve a la barra lateral en 'Portal del Residente' -> 'Reservas de Áreas Comunes', escoge la fecha y turno disponible, y envía la solicitud.\n" +
+                            "- Recuerda que las reservas están sujetas al aforo y cumplimiento del reglamento de convivencia.")
+                    .tipo(TipoRespuestaChatbot.TEXTO)
+                    .reproducirAudio(true)
+                    .sugerenciasAccion(Arrays.asList("Consultar mi consumo y cuotas", "¿Cómo pagar con Yape o Plin?", "Iniciar modo instructivo"))
+                    .build();
+        }
+
+        // 12. Fallback General Amigable y Contextual
         return RespuestaChatbotDTO.builder()
                 .textoRespuesta("Estimado Presidente, puedo responder sobre sus opciones de pago (Yape/Plin/Bancos), " +
                         "su consumo mensual en el Depto " + depto + " (Piso 1), avisos oficiales o iniciar el recorrido guiado " +
@@ -113,7 +153,7 @@ public class ChatbotPresidenteStrategy implements IEstrategiaChatbot {
                 .textoRespuesta(texto)
                 .tipo(TipoRespuestaChatbot.TEXTO)
                 .reproducirAudio(true)
-                .sugerenciasAccion(Arrays.asList("Consultar mi consumo y cuotas", "Ver comunicados vigentes", "Iniciar modo instructivo"))
+                .sugerenciasAccion(Arrays.asList("Consultar mi consumo y cuotas", "Ver comunicados oficiales de la junta", "Iniciar modo instructivo"))
                 .build();
     }
 
@@ -153,6 +193,7 @@ public class ChatbotPresidenteStrategy implements IEstrategiaChatbot {
                 .textoRespuesta(texto)
                 .tipo(TipoRespuestaChatbot.TEXTO)
                 .reproducirAudio(true)
+                .sugerenciasAccion(Arrays.asList("¿Cómo pagar con Yape o Plin?", "Ver comunicados oficiales de la junta", "Iniciar modo instructivo"))
                 .build();
     }
 
@@ -180,6 +221,7 @@ public class ChatbotPresidenteStrategy implements IEstrategiaChatbot {
                 .textoRespuesta(sb.toString().trim())
                 .tipo(TipoRespuestaChatbot.TEXTO)
                 .reproducirAudio(true)
+                .sugerenciasAccion(Arrays.asList("Consultar mi consumo y cuotas", "¿Cómo pagar con Yape o Plin?", "Iniciar modo instructivo"))
                 .build();
     }
 }

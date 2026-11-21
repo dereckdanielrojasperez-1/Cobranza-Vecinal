@@ -6,6 +6,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicButtonUI;
 import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.plaf.basic.BasicMenuItemUI;
+import javax.swing.plaf.basic.BasicTabbedPaneUI;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -806,6 +807,100 @@ public final class EstilosUI {
                 g2.dispose();
             }
         });
+    }
+
+    // Estiliza un JTabbedPane para tema oscuro corporativo de alto contraste, eliminando pestañas blancas del sistema
+    public static void estilizarPestanas(JTabbedPane tabbedPane, Color acento) {
+        if (tabbedPane == null) return;
+        final Color cAcento = (acento != null) ? acento : DORADO_PRINCIPAL;
+        tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        tabbedPane.setBackground(FONDO_PRINCIPAL);
+        tabbedPane.setForeground(Color.WHITE);
+        tabbedPane.setFocusable(false);
+        tabbedPane.setOpaque(false);
+
+        tabbedPane.setUI(new BasicTabbedPaneUI() {
+            @Override
+            protected void installDefaults() {
+                super.installDefaults();
+                highlight = BORDE_LINEA;
+                lightHighlight = BORDE_LINEA;
+                shadow = FONDO_PRINCIPAL;
+                darkShadow = FONDO_PRINCIPAL;
+                focus = cAcento;
+                tabInsets = new Insets(8, 16, 8, 16);
+                selectedTabPadInsets = new Insets(2, 2, 2, 2);
+            }
+
+            @Override
+            protected void paintTabArea(Graphics g, int tabPlacement, int selectedIndex) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setColor(FONDO_PRINCIPAL);
+                g2.fillRect(0, 0, tabbedPane.getWidth(), tabbedPane.getHeight());
+                g2.dispose();
+                super.paintTabArea(g, tabPlacement, selectedIndex);
+            }
+
+            @Override
+            protected void paintTabBackground(Graphics g, int tabPlacement, int tabIndex, int x, int y, int w, int h, boolean isSelected) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                if (isSelected) {
+                    // Pestaña activa: fondo azul pizarra oscuro con línea indicadora brillante
+                    g2.setColor(new Color(0x18, 0x25, 0x38));
+                    g2.fillRect(x, y, w, h);
+
+                    g2.setColor(cAcento);
+                    g2.fillRect(x, y + h - 3, w, 3);
+                } else {
+                    // Pestaña inactiva: tono oscuro corporativo nítido
+                    g2.setColor(new Color(0x0E, 0x16, 0x22));
+                    g2.fillRect(x, y, w, h);
+                }
+                g2.dispose();
+            }
+
+            @Override
+            protected void paintText(Graphics g, int tabPlacement, Font font, FontMetrics metrics, int tabIndex, String title, Rectangle textRect, boolean isSelected) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                g2.setFont(font);
+
+                if (isSelected) {
+                    g2.setColor(Color.WHITE);
+                } else {
+                    g2.setColor(new Color(0x94, 0xA3, 0xB8)); // Slate-400 visible y de alto contraste
+                }
+                g2.drawString(title, textRect.x, textRect.y + metrics.getAscent());
+                g2.dispose();
+            }
+
+            @Override
+            protected void paintTabBorder(Graphics g, int tabPlacement, int tabIndex, int x, int y, int w, int h, boolean isSelected) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setColor(BORDE_LINEA);
+                g2.drawRect(x, y, w, h);
+                g2.dispose();
+            }
+
+            @Override
+            protected void paintContentBorder(Graphics g, int tabPlacement, int selectedIndex) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setColor(BORDE_LINEA);
+                g2.drawRect(0, 0, tabbedPane.getWidth() - 1, tabbedPane.getHeight() - 1);
+                g2.dispose();
+            }
+
+            @Override
+            protected void paintFocusIndicator(Graphics g, int tabPlacement, Rectangle[] rects, int tabIndex, Rectangle iconRect, Rectangle textRect, boolean isSelected) {
+                // Suprimir el rectángulo punteado nativo para estética moderna
+            }
+        });
+    }
+
+    public static void estilizarPestanas(JTabbedPane tabbedPane) {
+        estilizarPestanas(tabbedPane, DORADO_PRINCIPAL);
     }
 
     // Construye una insignia tipo píldora (Badge) compacta con micro-borde y fondo traslúcido

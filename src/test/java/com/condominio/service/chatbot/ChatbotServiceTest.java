@@ -205,4 +205,60 @@ public class ChatbotServiceTest {
         assertFalse(chatbotService.isModoVozHabilitado());
         assertTrue(respDesactivar.getTextoRespuesta().contains("Modo Voz desactivado"));
     }
+
+    @Test
+    @DisplayName("El chatbot debe responder a saludos de manera limpia, concisa y empática")
+    public void testInteraccionSaludoCordial() {
+        RespuestaChatbotDTO resp = chatbotService.procesarMensaje(
+                "hola que tal?", RolUsuario.ADMINISTRADOR, "101"
+        );
+        assertNotNull(resp);
+        assertEquals(TipoRespuestaChatbot.TEXTO, resp.getTipo());
+        assertTrue(resp.getTextoRespuesta().contains("Hola"));
+        assertNotNull(resp.getSugerenciasAccion());
+        assertFalse(resp.getSugerenciasAccion().isEmpty());
+    }
+
+    @Test
+    @DisplayName("El chatbot debe orientar al usuario cuando indica que no sabe manejar el sistema")
+    public void testInteraccionAyudaManejoInduccion() {
+        RespuestaChatbotDTO resp = chatbotService.procesarMensaje(
+                "no se manejar, quiero que me ayudes a manejarlo", RolUsuario.ADMINISTRADOR, "101"
+        );
+        assertNotNull(resp);
+        assertEquals(TipoRespuestaChatbot.TEXTO, resp.getTipo());
+        assertTrue(resp.getTextoRespuesta().contains("Panel Lateral"));
+        assertTrue(resp.getTextoRespuesta().contains("Modo Instructivo"));
+        assertTrue(resp.getSugerenciasAccion().contains("Iniciar modo instructivo"));
+    }
+
+    @Test
+    @DisplayName("El chatbot debe responder preguntas frecuentes sobre como registrar pagos y morosidad")
+    public void testPreguntasFrecuentesCobranzaYMorosidad() {
+        RespuestaChatbotDTO respPago = chatbotService.procesarMensaje(
+                "¿cómo registro un pago?", RolUsuario.ADMINISTRADOR, "101"
+        );
+        assertNotNull(respPago);
+        assertTrue(respPago.getTextoRespuesta().contains("Para registrar un pago de cuota"));
+        assertTrue(respPago.getTextoRespuesta().contains("registrar pago depto"));
+
+        RespuestaChatbotDTO respMora = chatbotService.procesarMensaje(
+                "¿qué pasa si un vecino no paga?", RolUsuario.ADMINISTRADOR, "101"
+        );
+        assertNotNull(respMora);
+        assertTrue(respMora.getTextoRespuesta().contains("Gestión de Morosidad"));
+        assertTrue(respMora.getTextoRespuesta().contains("MOROSO"));
+    }
+
+    @Test
+    @DisplayName("El chatbot debe explicar la estructura de módulos del sistema")
+    public void testPreguntaModulosDelSistema() {
+        RespuestaChatbotDTO resp = chatbotService.procesarMensaje(
+                "¿qué módulos tiene el sistema?", RolUsuario.ADMINISTRADOR, "101"
+        );
+        assertNotNull(resp);
+        assertTrue(resp.getTextoRespuesta().contains("Dashboard"));
+        assertTrue(resp.getTextoRespuesta().contains("Finanzas"));
+        assertTrue(resp.getTextoRespuesta().contains("Operaciones"));
+    }
 }

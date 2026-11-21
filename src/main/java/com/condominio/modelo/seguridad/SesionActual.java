@@ -36,12 +36,24 @@ public final class SesionActual {
         return usuarioActivo != null && usuarioActivo.getRol() == RolUsuario.ADMINISTRADOR;
     }
 
+    public static synchronized boolean esPresidente() {
+        return usuarioActivo != null && usuarioActivo.getRol() == RolUsuario.PRESIDENTE;
+    }
+
+    public static synchronized boolean esGerente() {
+        return usuarioActivo != null && usuarioActivo.getRol() == RolUsuario.GERENTE;
+    }
+
     public static synchronized boolean esConserje() {
-        return usuarioActivo != null && usuarioActivo.getRol() == RolUsuario.CONSERJE;
+        return usuarioActivo != null && (usuarioActivo.getRol() == RolUsuario.CONSERJE || usuarioActivo.getRol() == RolUsuario.GERENTE);
     }
 
     public static synchronized boolean esResidente() {
-        return usuarioActivo != null && usuarioActivo.getRol() == RolUsuario.RESIDENTE;
+        return usuarioActivo != null && (usuarioActivo.getRol() == RolUsuario.RESIDENTE || usuarioActivo.getRol() == RolUsuario.PRESIDENTE);
+    }
+
+    public static synchronized boolean puedeExportarChatbot() {
+        return esAdministrador();
     }
 
     public static synchronized boolean puedeGenerarCuotas() {

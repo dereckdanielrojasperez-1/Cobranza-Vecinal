@@ -309,6 +309,10 @@ public final class EstilosUI {
         estilizarBoton(boton, acento, null);
     }
 
+    public static void estilizarBotonPrimario(JButton boton) {
+        estilizarBoton(boton, DORADO_PRINCIPAL, null);
+    }
+
     // Estiliza un botón secundario: fondo oscuro de tarjeta (#101A26), contorno en el color
     public static void estilizarBotonSecundario(JButton boton, Color acento) {
         final Color cNormal = obtenerColorNormal(acento);

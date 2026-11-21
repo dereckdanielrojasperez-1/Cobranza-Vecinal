@@ -25,7 +25,7 @@ public class ProxyAccesoCobranza implements ServicioAccesoCobranza {
         validarSesion(usuario);
 
         // Clave de caché aislada por rol y usuario para evitar filtraciones de datos entre perfiles
-        String claveCache = (usuario.getRol() == RolUsuario.RESIDENTE)
+        String claveCache = (usuario.getRol() == RolUsuario.RESIDENTE || usuario.getRol() == RolUsuario.PRESIDENTE)
                 ? periodo + "_RESIDENTE_" + usuario.getUsuario()
                 : periodo + "_ADMINISTRATIVO";
 
@@ -34,8 +34,8 @@ public class ProxyAccesoCobranza implements ServicioAccesoCobranza {
         }
 
         String resultado;
-        // Si el usuario es Residente, se restringe la auditoría a su nivel individual
-        if (usuario.getRol() == RolUsuario.RESIDENTE) {
+        // Si el usuario es Residente o Presidente de junta, se restringe la auditoría a su nivel individual
+        if (usuario.getRol() == RolUsuario.RESIDENTE || usuario.getRol() == RolUsuario.PRESIDENTE) {
             resultado = "ESTADO DE CUENTA RESIDENTE [" + periodo + "]\n"
                     + "- Residente: " + usuario.getUsuario() + "\n"
                     + "- Cuota Mantenimiento: Al día (S/ 0.00 pendiente)\n"

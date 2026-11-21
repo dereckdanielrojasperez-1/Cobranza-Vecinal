@@ -272,6 +272,22 @@ public class CargadorDatosIniciales implements CommandLineRunner {
                 .build());
 
         repo.save(UsuarioSistema.builder()
+                .usuario("presidente")
+                .clave("presidente123")
+                .rol(RolUsuario.PRESIDENTE)
+                .nombreCompleto("Presidente de la Junta Directiva (Depto 101)")
+                .activo(true)
+                .build());
+
+        repo.save(UsuarioSistema.builder()
+                .usuario("gerente")
+                .clave("gerente123")
+                .rol(RolUsuario.GERENTE)
+                .nombreCompleto("Gerente de Operaciones y Mantenimiento")
+                .activo(true)
+                .build());
+
+        repo.save(UsuarioSistema.builder()
                 .usuario("conserje")
                 .clave("conserje123")
                 .rol(RolUsuario.CONSERJE)
@@ -287,7 +303,7 @@ public class CargadorDatosIniciales implements CommandLineRunner {
                 .activo(true)
                 .build());
 
-        log.info("Usuarios de sistema sembrados exitosamente (admin/admin123, conserje/conserje123, residente/residente123).");
+        log.info("Usuarios de sistema sembrados exitosamente (admin, presidente, gerente, conserje, residente).");
     }
 
     // Verifica si la base de datos carece de cuotas y siembra los registros de prueba vinculados a departamentos.

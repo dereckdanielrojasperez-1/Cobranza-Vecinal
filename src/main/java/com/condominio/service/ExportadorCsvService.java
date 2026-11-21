@@ -82,6 +82,50 @@ public class ExportadorCsvService {
         return archivo;
     }
 
+    // Exporta una matriz de datos estructurada a formato CSV/Excel con BOM UTF-8
+    public File exportarMatrizCsv(String nombreBase, java.util.List<String> encabezados, java.util.List<java.util.List<String>> filas) throws Exception {
+        asegurarCarpetaExiste();
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        String baseLimpia = (nombreBase != null) ? nombreBase.replaceAll("[^a-zA-Z0-9_-]", "") : "exportacion_datos";
+        if (baseLimpia.isBlank()) {
+            baseLimpia = "exportacion_datos";
+        }
+        String rutaArchivo = String.format("%s/%s_%s.csv", CARPETA_EXPORTACIONES, baseLimpia, timestamp);
+        File archivo = new File(rutaArchivo);
+
+        try (FileOutputStream fos = new FileOutputStream(archivo);
+             OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
+             BufferedWriter writer = new BufferedWriter(osw)) {
+
+            writer.write('\uFEFF'); // BOM UTF-8 para compatibilidad nativa con Microsoft Excel
+
+            if (encabezados != null) {
+                for (int i = 0; i < encabezados.size(); i++) {
+                    writer.write(escaparCsv(encabezados.get(i)));
+                    if (i < encabezados.size() - 1) {
+                        writer.write(";");
+                    }
+                }
+                writer.newLine();
+            }
+
+            if (filas != null) {
+                for (java.util.List<String> fila : filas) {
+                    for (int i = 0; i < fila.size(); i++) {
+                        writer.write(escaparCsv(fila.get(i)));
+                        if (i < fila.size() - 1) {
+                            writer.write(";");
+                        }
+                    }
+                    writer.newLine();
+                }
+            }
+            writer.flush();
+        }
+        log.info("Archivo Excel/CSV generado exitosamente: {}", archivo.getAbsolutePath());
+        return archivo;
+    }
+
     private String escaparCsv(String valor) {
         if (valor == null) return "";
         String v = valor.trim();

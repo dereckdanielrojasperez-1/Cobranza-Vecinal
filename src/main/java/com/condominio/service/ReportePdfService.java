@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.awt.Color;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -35,6 +36,55 @@ public class ReportePdfService {
         if (!dir.exists()) {
             dir.mkdirs();
         }
+    }
+
+    // Comprobante oficial de pago (Voucher de Cobranza) emitido bajo demanda
+    public File generarVoucherPago(Long idPago, String depto, double monto, String metodoPago, LocalDate fecha) throws Exception {
+        asegurarCarpetaExiste();
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        String deptoLimpio = (depto != null && !depto.isBlank()) ? depto.replaceAll("[^a-zA-Z0-9_-]", "") : "101";
+        String nombreArchivo = String.format("%s/Voucher_Pago_Depto_%s_%s.pdf", CARPETA_REPORTES, deptoLimpio, timestamp);
+        File archivo = new File(nombreArchivo);
+
+        Document doc = new Document(PageSize.A5, 30, 30, 30, 30);
+        PdfWriter.getInstance(doc, new FileOutputStream(archivo));
+        doc.open();
+
+        agregarMembrete(doc, "COMPROBANTE OFICIAL DE PAGO - VOUCHER DE COBRANZA");
+
+        PdfPTable tabla = new PdfPTable(2);
+        tabla.setWidthPercentage(100);
+        tabla.setWidths(new float[]{42, 58});
+
+        long numeroVoucher = (idPago != null && idPago > 0) ? idPago : (System.currentTimeMillis() % 1000000);
+        String fechaTexto = (fecha != null) ? fecha.toString() : LocalDate.now().toString();
+
+        agregarFilaVoucher(tabla, "N° Comprobante / Voucher:", "VCH-" + String.format("%06d", numeroVoucher));
+        agregarFilaVoucher(tabla, "Departamento / Unidad:", "Depto " + deptoLimpio);
+        agregarFilaVoucher(tabla, "Monto Abonado:", String.format("S/ %.2f", monto));
+        agregarFilaVoucher(tabla, "Método de Pago:", (metodoPago != null ? metodoPago : "Transferencia Bancaria"));
+        agregarFilaVoucher(tabla, "Fecha de Operación:", fechaTexto);
+        agregarFilaVoucher(tabla, "Estado de Transacción:", "CONCILIADO Y REGISTRADO EN BD");
+        agregarFilaVoucher(tabla, "Autorizado por:", "Administración General");
+
+        doc.add(tabla);
+        agregarPiePagina(doc);
+        doc.close();
+        return archivo;
+    }
+
+    private void agregarFilaVoucher(PdfPTable tabla, String etiqueta, String valor) {
+        PdfPCell c1 = new PdfPCell(new Phrase(etiqueta, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.DARK_GRAY)));
+        c1.setBackgroundColor(new Color(245, 247, 250));
+        c1.setPadding(6);
+        c1.setBorderColor(new Color(220, 225, 230));
+
+        PdfPCell c2 = new PdfPCell(new Phrase(valor, FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
+        c2.setPadding(6);
+        c2.setBorderColor(new Color(220, 225, 230));
+
+        tabla.addCell(c1);
+        tabla.addCell(c2);
     }
 
     // 1. Estado de cuenta individual por departamento / propietario

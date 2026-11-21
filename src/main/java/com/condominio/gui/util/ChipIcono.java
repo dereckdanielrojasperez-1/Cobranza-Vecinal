@@ -200,6 +200,18 @@ public class ChipIcono extends JComponent {
                 g2.drawLine(cx - 5, cy + 7, cx, cy + 4);
                 break;
 
+            case "CHATBOT":
+            case "ROBOT":
+            case "IA":
+                // Cabeza de robot con antenita y ojos luminosos
+                g2.drawRoundRect(cx - 6, cy - 4, 12, 10, 3, 3);
+                g2.drawLine(cx, cy - 4, cx, cy - 7);
+                g2.fillOval(cx - 1, cy - 8, 2, 2);
+                g2.fillOval(cx - 4, cy - 1, 2, 2);
+                g2.fillOval(cx + 2, cy - 1, 2, 2);
+                g2.drawLine(cx - 3, cy + 3, cx + 3, cy + 3);
+                break;
+
             default:
                 // Círculo neutro
                 g2.drawOval(cx - 4, cy - 4, 8, 8);

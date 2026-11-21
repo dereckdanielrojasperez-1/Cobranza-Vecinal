@@ -10,6 +10,7 @@ import com.condominio.gui.util.ConstantesUI;
 import com.condominio.gui.util.EstilosUI;
 import com.condominio.gui.util.GlassPanel;
 import com.condominio.gui.util.RielIconosLateral;
+import com.condominio.modelo.seguridad.RolUsuario;
 import com.condominio.modelo.seguridad.SesionActual;
 import com.condominio.patrones.facade.CobranzaFachada;
 
@@ -32,6 +33,14 @@ public class VentanaPrincipal extends JFrame {
     private JLabel lblSaludoUsuario;
     private JLabel lblSubtituloModulo;
     private PanelControl panelControlRef;
+
+    private com.condominio.service.chatbot.IChatbotService chatbotService;
+    private com.condominio.gui.animacion.SpotlightTutorialOverlay overlayTutorial;
+    private DialogoChatbotAsistente dialogoChatbot;
+    private JComponent panelBuscadorRef;
+    private JLabel pildoraComunicadosRef;
+    private JLabel pildoraPoliticasRef;
+    private JButton btnChatbotRef;
 
     // Acentos cromáticos por orden de pestaña (Punto 2.1)
     private static final Color[] ACENTOS_PESTANAS = {
@@ -58,6 +67,8 @@ public class VentanaPrincipal extends JFrame {
     public VentanaPrincipal(CobranzaFachada fachadaCobranza) {
         super("Cobranza Vecinal - Sistema de Administración Condominal");
         this.fachadaCobranza = (fachadaCobranza != null) ? fachadaCobranza : new CobranzaFachada();
+        this.chatbotService = new com.condominio.service.chatbot.ChatbotServiceImpl(this.fachadaCobranza, null, null, null);
+        this.overlayTutorial = new com.condominio.gui.animacion.SpotlightTutorialOverlay(this);
         configurarVentana();
         inicializarComponentes();
     }
@@ -202,6 +213,16 @@ public class VentanaPrincipal extends JFrame {
         if (rielLateral.getElementoActivo() != null) {
             alSeleccionarModuloRiel(rielLateral.getElementoActivo());
         }
+
+        if (SesionActual.esPresidente()) {
+            SwingUtilities.invokeLater(() -> {
+                com.condominio.gui.animacion.AnimadorToast.mostrar(
+                        "BIENVENIDO PRESIDENTE",
+                        "Presione 'Asistente IA' o 'Modo Instructivo' para un recorrido guiado del sistema",
+                        new Color(0x38, 0xBD, 0xF8)
+                );
+            });
+        }
     }
 
     private void alSeleccionarModuloRiel(RielIconosLateral.ElementoRiel elem) {
@@ -323,6 +344,7 @@ public class VentanaPrincipal extends JFrame {
         GlassPanel panelBuscador = new GlassPanel(new FlowLayout(FlowLayout.LEFT, 8, 3), 16, null, false);
         panelBuscador.setPreferredSize(new Dimension(230, 32));
         panelBuscador.setBorder(new EmptyBorder(2, 6, 2, 6));
+        panelBuscadorRef = panelBuscador;
 
         ChipIcono chipLupa = new ChipIcono("SEARCH", EstilosUI.TEXTO_SECUNDARIO, 16, false);
         chipLupa.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -404,6 +426,19 @@ public class VentanaPrincipal extends JFrame {
         });
         panelDerecho.add(btnNotif);
 
+        // Icono del Asistente Virtual IA (Chatbot) en chip de vidrio dorado
+        btnChatbotRef = new JButton();
+        btnChatbotRef.setFocusPainted(false);
+        btnChatbotRef.setContentAreaFilled(false);
+        btnChatbotRef.setBorderPainted(false);
+        btnChatbotRef.setOpaque(false);
+        btnChatbotRef.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnChatbotRef.setToolTipText("Asistente Virtual IA - Consultas, auditoría de costos, voz y modo instructivo");
+        btnChatbotRef.setLayout(new BorderLayout());
+        btnChatbotRef.add(new ChipIcono("CHATBOT", EstilosUI.DORADO_PRINCIPAL, 30, true), BorderLayout.CENTER);
+        btnChatbotRef.addActionListener(e -> mostrarDialogoChatbot());
+        panelDerecho.add(btnChatbotRef);
+
         // Icono de Ayuda / Soporte en chip de vidrio (Regla 5)
         JButton btnAyuda = new JButton();
         btnAyuda.setFocusPainted(false);
@@ -411,11 +446,19 @@ public class VentanaPrincipal extends JFrame {
         btnAyuda.setBorderPainted(false);
         btnAyuda.setOpaque(false);
         btnAyuda.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btnAyuda.setToolTipText("Mesa de Ayuda e Información del Sistema");
+        btnAyuda.setToolTipText("Mesa de Ayuda, Asistente y Soporte del Sistema");
         btnAyuda.setLayout(new BorderLayout());
         btnAyuda.add(new ChipIcono("HELP", EstilosUI.AZUL_INFO, 30, true), BorderLayout.CENTER);
 
         JPopupMenu menuAyuda = EstilosUI.crearMenuDesbordeOscuro(EstilosUI.AZUL_INFO);
+
+        JMenuItem itemChatbot = EstilosUI.crearItemMenuOscuro("Asistente Virtual IA (Chatbot)", EstilosUI.TEXTO_PRINCIPAL, EstilosUI.DORADO_PRINCIPAL);
+        itemChatbot.addActionListener(e -> mostrarDialogoChatbot());
+        menuAyuda.add(itemChatbot);
+
+        JMenuItem itemTutorial = EstilosUI.crearItemMenuOscuro("Modo Instructivo (Tutorial Guiado)", EstilosUI.TEXTO_PRINCIPAL, new Color(0x38, 0xBD, 0xF8));
+        itemTutorial.addActionListener(e -> iniciarModoInstructivo());
+        menuAyuda.add(itemTutorial);
 
         JMenuItem itemAcerca = EstilosUI.crearItemMenuOscuro("Acerca de Cobranza Vecinal", EstilosUI.TEXTO_PRINCIPAL, EstilosUI.AZUL_INFO);
         itemAcerca.addActionListener(e -> mostrarDialogoAcercaDe());
@@ -435,6 +478,18 @@ public class VentanaPrincipal extends JFrame {
         // Badge de Periodo Contable Activo
         panelDerecho.add(crearPildoraPastel("Periodo: Noviembre 2026", new Color(0x4D, 0xA3, 0xFF, (int)(255 * 0.15)), cPeriodo, cPeriodo));
 
+        // Botón Píldora: Asistente IA
+        JLabel pildoraChatbot = crearPildoraPastel("Asistente IA", new Color(0xE8, 0xA3, 0x3D, (int)(255 * 0.15)), EstilosUI.DORADO_PRINCIPAL, EstilosUI.DORADO_PRINCIPAL);
+        pildoraChatbot.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        pildoraChatbot.setToolTipText("Abrir Asistente Virtual Inteligente con soporte de voz y comandos");
+        pildoraChatbot.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                mostrarDialogoChatbot();
+            }
+        });
+        panelDerecho.add(pildoraChatbot);
+
         // Botón Píldora: Tablón de Comunicados
         JLabel pildoraComunicados = crearPildoraPastel("Comunicados", new Color(0x58, 0xC9, 0x9A, (int)(255 * 0.15)), cComunicados, cComunicados);
         pildoraComunicados.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -445,6 +500,7 @@ public class VentanaPrincipal extends JFrame {
                 mostrarDialogoComunicados();
             }
         });
+        pildoraComunicadosRef = pildoraComunicados;
         panelDerecho.add(pildoraComunicados);
 
         // Botón Píldora: Políticas y Parámetros (Exclusivo Administrador)
@@ -458,13 +514,18 @@ public class VentanaPrincipal extends JFrame {
                     mostrarDialogoConfiguracion();
                 }
             });
+            pildoraPoliticasRef = pildoraPoliticas;
             panelDerecho.add(pildoraPoliticas);
         }
 
         Color cUsuario = SesionActual.esAdministrador() ? EstilosUI.DORADO_PRINCIPAL
-                : (SesionActual.esConserje() ? EstilosUI.ACENTO_OPERACIONES : EstilosUI.ACENTO_RESIDENTES);
+                : (SesionActual.esPresidente() ? new Color(0x38, 0xBD, 0xF8)
+                : (SesionActual.esGerente() ? new Color(0x58, 0xC9, 0x9A)
+                : (SesionActual.esConserje() ? EstilosUI.ACENTO_OPERACIONES : EstilosUI.ACENTO_RESIDENTES)));
         String etiquetaRol = "Rol: " + SesionActual.getRol() +
-                (SesionActual.esResidente() ? " (Depto 101)" : (SesionActual.esConserje() ? " (Operaciones)" : " (Total)"));
+                (SesionActual.esPresidente() ? " (Depto 101 - Junta)"
+                : (SesionActual.esGerente() ? " (Operaciones)"
+                : (SesionActual.esResidente() ? " (Depto 101)" : (SesionActual.esConserje() ? " (Portería)" : " (Total)"))));
         panelDerecho.add(crearPildoraPastel(etiquetaRol, new Color(cUsuario.getRed(), cUsuario.getGreen(), cUsuario.getBlue(), (int)(255 * 0.15)), cUsuario, cUsuario));
 
         header.add(panelDerecho, BorderLayout.EAST);
@@ -476,10 +537,14 @@ public class VentanaPrincipal extends JFrame {
         pnl.setOpaque(false);
 
         Color cAcento = SesionActual.esAdministrador() ? EstilosUI.DORADO_PRINCIPAL
-                : (SesionActual.esConserje() ? EstilosUI.ACENTO_OPERACIONES : EstilosUI.ACENTO_RESIDENTES);
+                : (SesionActual.esPresidente() ? new Color(0x38, 0xBD, 0xF8)
+                : (SesionActual.esGerente() ? new Color(0x58, 0xC9, 0x9A)
+                : (SesionActual.esConserje() ? EstilosUI.ACENTO_OPERACIONES : EstilosUI.ACENTO_RESIDENTES)));
 
         String inicial = SesionActual.esAdministrador() ? "A"
-                : (SesionActual.esConserje() ? "C" : "R");
+                : (SesionActual.esPresidente() ? "P"
+                : (SesionActual.esGerente() ? "G"
+                : (SesionActual.esConserje() ? "C" : "R")));
 
         JLabel avatar = new JLabel(inicial, SwingConstants.CENTER) {
             @Override
@@ -847,6 +912,147 @@ public class VentanaPrincipal extends JFrame {
     public void mostrarDialogoCatalogoPatrones() {
         DialogoCatalogoPatrones dialogo = new DialogoCatalogoPatrones(this);
         dialogo.setVisible(true);
+    }
+
+    // Abre la ventana interactiva del Asistente Virtual IA (Chatbot)
+    public void mostrarDialogoChatbot() {
+        if (dialogoChatbot == null || !dialogoChatbot.isDisplayable()) {
+            dialogoChatbot = new DialogoChatbotAsistente(this, this.chatbotService, this::iniciarModoInstructivo);
+        }
+        dialogoChatbot.setVisible(true);
+        dialogoChatbot.toFront();
+    }
+
+    // Inicia el Modo Instructivo / Spotlight Tutorial interactivo según el rol activo
+    public void iniciarModoInstructivo() {
+        if (overlayTutorial == null) {
+            overlayTutorial = new com.condominio.gui.animacion.SpotlightTutorialOverlay(this);
+        }
+        overlayTutorial.limpiarPasos();
+
+        RolUsuario rol = SesionActual.getRol();
+
+        if (rol == RolUsuario.ADMINISTRADOR) {
+            if (rielLateral != null) {
+                overlayTutorial.registrarPaso(
+                        rielLateral,
+                        "Barra de Módulos Administrativos",
+                        "Navegue entre el Dashboard analítico, gestión de inmuebles, padrón de residentes, cobranzas y operaciones del condominio.",
+                        "En esta barra lateral puede acceder a todos los módulos contables y operativos del condominio."
+                );
+            }
+            if (btnChatbotRef != null) {
+                overlayTutorial.registrarPaso(
+                        btnChatbotRef,
+                        "Asistente Virtual IA y Auditoría",
+                        "Abra el Asistente IA para auditar costos de la base de datos, generar vouchers de pago y exportar reportes directos a PDF y Excel.",
+                        "El asistente virtual le permite realizar auditorías financieras y exportar documentos contables a PDF o Excel."
+                );
+            }
+            if (panelBuscadorRef != null) {
+                overlayTutorial.registrarPaso(
+                        panelBuscadorRef,
+                        "Centro de Búsqueda Global",
+                        "Buscador unificado en tiempo real con filtro RBAC. Presione Ctrl+K para buscar cuotas, gastos o vecinos al instante.",
+                        "Utilice la búsqueda rápida para localizar cualquier registro del sistema."
+                );
+            }
+            if (pildoraPoliticasRef != null) {
+                overlayTutorial.registrarPaso(
+                        pildoraPoliticasRef,
+                        "Políticas y Parámetros Contables",
+                        "Configure la tasa de interés por mora, días de gracia para el pago y parámetros de corte de servicios comunes.",
+                        "Aquí puede ajustar las tasas de interés y plazos de gracia del condominio."
+                );
+            }
+            if (panelCards != null) {
+                overlayTutorial.registrarPaso(
+                        panelCards,
+                        "Espacio de Trabajo Central",
+                        "Área interactiva principal donde se presentan los tableros analíticos, tablas de datos, acciones CRUD y gráficos dinámicos.",
+                        "En esta zona se despliegan las tablas de datos y gráficos interactivos."
+                );
+            }
+
+        } else if (rol == RolUsuario.PRESIDENTE || rol == RolUsuario.RESIDENTE) {
+            if (rielLateral != null) {
+                overlayTutorial.registrarPaso(
+                        rielLateral,
+                        "Módulos del Residente y Junta",
+                        "Acceda a sus opciones de usuario: 'Mis Cuotas' para revisar estados de cuenta, 'Reservas' de áreas comunes y 'Reportar' averías.",
+                        "Utilice esta barra lateral para consultar sus cuotas pendientes, reservar áreas comunes y reportar novedades."
+                );
+            }
+            if (btnChatbotRef != null) {
+                overlayTutorial.registrarPaso(
+                        btnChatbotRef,
+                        "Asistente Virtual IA - Consultas y Pagos",
+                        "Consulte sus formas de pago (Yape, Plin, cuentas BCP y BBVA), revise su consumo y reciba asistencia guiada por texto o voz.",
+                        "El asistente virtual le indicará cómo pagar con Yape o transferencia bancaria y desglosará sus consumos."
+                );
+            }
+            if (panelBuscadorRef != null) {
+                overlayTutorial.registrarPaso(
+                        panelBuscadorRef,
+                        "Buscador de Avisos y Gastos",
+                        "Consulte con transparencia los comunicados oficiales de la junta, gastos comunitarios y convocatorias a asambleas.",
+                        "Busque comunicados comunitarios y gastos comunes transparentes."
+                );
+            }
+            if (pildoraComunicadosRef != null) {
+                overlayTutorial.registrarPaso(
+                        pildoraComunicadosRef,
+                        "Tablón Oficial de Comunicados",
+                        "Manténgase al día con las circulares de la administración, avisos de corte de mantenimiento y acuerdos de asamblea.",
+                        "Consulte aquí los comunicados y circulares oficiales del condominio."
+                );
+            }
+            if (panelCards != null) {
+                overlayTutorial.registrarPaso(
+                        panelCards,
+                        "Portal de Cuotas y Pagos",
+                        "Visualice su departamento 101 en Piso 1, revise el detalle de consumos de agua y mantenimiento ordinario.",
+                        "En este panel puede verificar sus cuotas mensuales y consumos de agua y mantenimiento."
+                );
+            }
+
+        } else {
+            // Gerente / Limpieza / Conserje
+            if (rielLateral != null) {
+                overlayTutorial.registrarPaso(
+                        rielLateral,
+                        "Navegación Operativa y Mantenimiento",
+                        "Supervise la Bitácora de Novedades e Incidentes, el registro de Garita y accesos, y el Directorio telefónico de emergencias.",
+                        "Acceda a la bitácora de novedades, control de portería y contactos de emergencia."
+                );
+            }
+            if (btnChatbotRef != null) {
+                overlayTutorial.registrarPaso(
+                        btnChatbotRef,
+                        "Asistente Virtual Operativo",
+                        "Consulte el estado de limpieza de áreas comunes, revise incidentes abiertos y registre novedades o visitas mediante comandos.",
+                        "Consulte la bitácora de limpieza y registre incidencias mediante el asistente con voz o texto."
+                );
+            }
+            if (panelCards != null) {
+                overlayTutorial.registrarPaso(
+                        panelCards,
+                        "Bitácora y Control de Accesos",
+                        "Gestión en tiempo real de ingresos de visitas, encomiendas y reportes de desperfectos en infraestructura.",
+                        "Supervise en tiempo real las visitas de portería y tareas de mantenimiento."
+                );
+            }
+        }
+
+        overlayTutorial.iniciar(completado -> {
+            if (completado) {
+                com.condominio.gui.animacion.AnimadorToast.mostrar(
+                        "MODO INSTRUCTIVO",
+                        "Recorrido interactivo completado satisfactoriamente",
+                        new Color(0x58, 0xC9, 0x9A)
+                );
+            }
+        });
     }
 
     // COMPONENTES DECORATIVOS Y UTILITARIOS (SIN EMOJIS)

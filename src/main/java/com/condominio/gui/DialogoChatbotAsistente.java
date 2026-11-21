@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.basic.BasicButtonUI;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -134,24 +135,49 @@ public class DialogoChatbotAsistente extends JDialog {
         // Botón Modo Instructivo (Tutorial Spotlight)
         btnModoInstructivo = new JButton("Modo Instructivo");
         btnModoInstructivo.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        btnModoInstructivo.setForeground(new Color(0x38, 0xBD, 0xF8));
-        btnModoInstructivo.setBackground(new Color(0x13, 0x22, 0x36));
-        btnModoInstructivo.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(0x38, 0xBD, 0xF8, 140), 1, true),
-                new EmptyBorder(5, 10, 5, 10)
-        ));
         btnModoInstructivo.setFocusPainted(false);
+        btnModoInstructivo.setContentAreaFilled(false);
+        btnModoInstructivo.setOpaque(false);
         btnModoInstructivo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnModoInstructivo.setBorder(new EmptyBorder(5, 12, 5, 12));
         btnModoInstructivo.setToolTipText("Activar recorrido guiado con iluminación y explicación de botones");
+        btnModoInstructivo.setUI(new BasicButtonUI() {
+            @Override
+            public void paint(Graphics g, JComponent c) {
+                AbstractButton b = (AbstractButton) c;
+                ButtonModel model = b.getModel();
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+                Color fondo = model.isPressed() ? new Color(0x1C, 0x38, 0x56) :
+                        (model.isRollover() ? new Color(0x18, 0x2E, 0x48) : new Color(0x10, 0x1E, 0x30));
+                g2.setColor(fondo);
+                g2.fillRoundRect(0, 0, b.getWidth() - 1, b.getHeight() - 1, 8, 8);
+                g2.setColor(new Color(0x38, 0xBD, 0xF8));
+                g2.setStroke(new BasicStroke(1.2f));
+                g2.drawRoundRect(0, 0, b.getWidth() - 1, b.getHeight() - 1, 8, 8);
+
+                FontMetrics fm = g2.getFontMetrics(b.getFont());
+                g2.setColor(new Color(0x38, 0xBD, 0xF8));
+                int textX = (b.getWidth() - fm.stringWidth(b.getText())) / 2;
+                int textY = (b.getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+                g2.drawString(b.getText(), textX, textY);
+                g2.dispose();
+            }
+        });
         btnModoInstructivo.addActionListener(e -> activarTutorialSpotlight());
 
         // Botón Modo Voz (Toggle Audio TTS)
         btnModoVoz = new JButton(SintetizadorVoz.isHabilitado() ? "Voz: ON" : "Voz: OFF");
         btnModoVoz.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        actualizarEstiloBotonVoz();
         btnModoVoz.setFocusPainted(false);
+        btnModoVoz.setContentAreaFilled(false);
+        btnModoVoz.setOpaque(false);
         btnModoVoz.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnModoVoz.setBorder(new EmptyBorder(5, 12, 5, 12));
         btnModoVoz.setToolTipText("Activar o silenciar narración hablada de las respuestas");
+        actualizarEstiloBotonVoz();
         btnModoVoz.addActionListener(e -> {
             SintetizadorVoz.conmutarModoVoz();
             if (chatbotService != null) {
@@ -166,15 +192,37 @@ public class DialogoChatbotAsistente extends JDialog {
         // Botón Limpiar Chat (Modo Limpieza)
         btnLimpiarChat = new JButton("Limpiar Chat");
         btnLimpiarChat.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        btnLimpiarChat.setForeground(EstilosUI.TEXTO_SECUNDARIO);
-        btnLimpiarChat.setBackground(new Color(0x1C, 0x24, 0x30));
-        btnLimpiarChat.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(EstilosUI.BORDE_LINEA, 1, true),
-                new EmptyBorder(5, 10, 5, 10)
-        ));
         btnLimpiarChat.setFocusPainted(false);
+        btnLimpiarChat.setContentAreaFilled(false);
+        btnLimpiarChat.setOpaque(false);
         btnLimpiarChat.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnLimpiarChat.setBorder(new EmptyBorder(5, 12, 5, 12));
         btnLimpiarChat.setToolTipText("Restablecer conversación y borrar historial");
+        btnLimpiarChat.setUI(new BasicButtonUI() {
+            @Override
+            public void paint(Graphics g, JComponent c) {
+                AbstractButton b = (AbstractButton) c;
+                ButtonModel model = b.getModel();
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+                Color fondo = model.isPressed() ? new Color(0x28, 0x1E, 0x22) :
+                        (model.isRollover() ? new Color(0x22, 0x1A, 0x20) : new Color(0x16, 0x1E, 0x28));
+                g2.setColor(fondo);
+                g2.fillRoundRect(0, 0, b.getWidth() - 1, b.getHeight() - 1, 8, 8);
+                g2.setColor(model.isRollover() ? EstilosUI.ROJO_ERROR_TEXTO : EstilosUI.BORDE_LINEA);
+                g2.setStroke(new BasicStroke(1.2f));
+                g2.drawRoundRect(0, 0, b.getWidth() - 1, b.getHeight() - 1, 8, 8);
+
+                FontMetrics fm = g2.getFontMetrics(b.getFont());
+                g2.setColor(model.isRollover() ? EstilosUI.ROJO_ERROR_TEXTO : EstilosUI.TEXTO_SECUNDARIO);
+                int textX = (b.getWidth() - fm.stringWidth(b.getText())) / 2;
+                int textY = (b.getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+                g2.drawString(b.getText(), textX, textY);
+                g2.dispose();
+            }
+        });
         btnLimpiarChat.addActionListener(e -> ejecutarLimpiezaChat());
 
         panelAccionesHeader.add(btnModoInstructivo);
@@ -188,13 +236,35 @@ public class DialogoChatbotAsistente extends JDialog {
     private void actualizarEstiloBotonVoz() {
         boolean activo = SintetizadorVoz.isHabilitado();
         btnModoVoz.setText(activo ? "Voz: ON" : "Voz: OFF");
-        Color colorTexto = activo ? new Color(0x58, 0xC9, 0x9A) : EstilosUI.TEXTO_MUTED;
-        btnModoVoz.setForeground(colorTexto);
-        btnModoVoz.setBackground(activo ? new Color(0x13, 0x30, 0x22) : new Color(0x1C, 0x24, 0x30));
-        btnModoVoz.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(colorTexto, 1, true),
-                new EmptyBorder(5, 10, 5, 10)
-        ));
+        final Color colorTexto = activo ? new Color(0x58, 0xC9, 0x9A) : EstilosUI.TEXTO_MUTED;
+        final Color colorFondo = activo ? new Color(0x13, 0x30, 0x22) : new Color(0x14, 0x1C, 0x26);
+        final Color colorBorde = activo ? new Color(0x58, 0xC9, 0x9A) : EstilosUI.BORDE_LINEA;
+
+        btnModoVoz.setUI(new BasicButtonUI() {
+            @Override
+            public void paint(Graphics g, JComponent c) {
+                AbstractButton b = (AbstractButton) c;
+                ButtonModel model = b.getModel();
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+                Color f = model.isRollover() ? colorFondo.brighter() : colorFondo;
+                g2.setColor(f);
+                g2.fillRoundRect(0, 0, b.getWidth() - 1, b.getHeight() - 1, 8, 8);
+                g2.setColor(colorBorde);
+                g2.setStroke(new BasicStroke(1.2f));
+                g2.drawRoundRect(0, 0, b.getWidth() - 1, b.getHeight() - 1, 8, 8);
+
+                FontMetrics fm = g2.getFontMetrics(b.getFont());
+                g2.setColor(colorTexto);
+                int textX = (b.getWidth() - fm.stringWidth(b.getText())) / 2;
+                int textY = (b.getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+                g2.drawString(b.getText(), textX, textY);
+                g2.dispose();
+            }
+        });
+        btnModoVoz.repaint();
     }
 
     private JPanel crearBarraEntrada() {
@@ -238,15 +308,42 @@ public class DialogoChatbotAsistente extends JDialog {
         if (sugerencias != null) {
             for (String s : sugerencias) {
                 JButton pill = new JButton(s);
-                pill.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+                pill.setFont(new Font("Segoe UI", Font.BOLD, 10));
                 pill.setForeground(EstilosUI.DORADO_PRINCIPAL);
-                pill.setBackground(new Color(0x1C, 0x26, 0x35));
-                pill.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(new Color(0xE8, 0xA3, 0x3D, 90), 1, true),
-                        new EmptyBorder(3, 8, 3, 8)
-                ));
                 pill.setFocusPainted(false);
+                pill.setContentAreaFilled(false);
+                pill.setOpaque(false);
                 pill.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                pill.setBorder(new EmptyBorder(4, 10, 4, 10));
+
+                pill.setUI(new BasicButtonUI() {
+                    @Override
+                    public void paint(Graphics g, JComponent c) {
+                        AbstractButton b = (AbstractButton) c;
+                        ButtonModel model = b.getModel();
+                        Graphics2D g2 = (Graphics2D) g.create();
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+                        Color fondo = model.isPressed() ? new Color(0x28, 0x36, 0x4A) :
+                                (model.isRollover() ? new Color(0x22, 0x30, 0x42) : new Color(0x16, 0x22, 0x32));
+                        Color borde = model.isRollover() ? EstilosUI.DORADO_PRINCIPAL : new Color(0xE8, 0xA3, 0x3D, 140);
+
+                        g2.setColor(fondo);
+                        g2.fillRoundRect(0, 0, b.getWidth() - 1, b.getHeight() - 1, 14, 14);
+                        g2.setColor(borde);
+                        g2.setStroke(new BasicStroke(1.0f));
+                        g2.drawRoundRect(0, 0, b.getWidth() - 1, b.getHeight() - 1, 14, 14);
+
+                        FontMetrics fm = g2.getFontMetrics(b.getFont());
+                        g2.setColor(EstilosUI.DORADO_PRINCIPAL);
+                        int textX = (b.getWidth() - fm.stringWidth(b.getText())) / 2;
+                        int textY = (b.getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+                        g2.drawString(b.getText(), textX, textY);
+                        g2.dispose();
+                    }
+                });
+
                 pill.addActionListener(e -> {
                     txtEntradaMensaje.setText(s);
                     enviarMensajeUsuario();
@@ -390,14 +487,40 @@ public class DialogoChatbotAsistente extends JDialog {
 
             JButton btnAbrirArchivo = new JButton(esPdf ? "Abrir Documento PDF" : "Abrir Planilla Excel");
             btnAbrirArchivo.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            btnAbrirArchivo.setForeground(Color.WHITE);
-            btnAbrirArchivo.setBackground(esPdf ? new Color(0x9E, 0x2A, 0x2B) : new Color(0x1D, 0x6F, 0x42));
-            btnAbrirArchivo.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(Color.WHITE, 1, true),
-                    new EmptyBorder(4, 10, 4, 10)
-            ));
             btnAbrirArchivo.setFocusPainted(false);
+            btnAbrirArchivo.setContentAreaFilled(false);
+            btnAbrirArchivo.setOpaque(false);
             btnAbrirArchivo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnAbrirArchivo.setBorder(new EmptyBorder(6, 14, 6, 14));
+
+            final Color cFondo = esPdf ? new Color(0x88, 0x13, 0x37) : new Color(0x06, 0x4E, 0x3B);
+            final Color cHover = esPdf ? new Color(0xBE, 0x12, 0x3C) : new Color(0x04, 0x78, 0x57);
+            final Color cBorde = esPdf ? new Color(0xFB, 0x71, 0x85) : new Color(0x34, 0xD3, 0x99);
+
+            btnAbrirArchivo.setUI(new BasicButtonUI() {
+                @Override
+                public void paint(Graphics g, JComponent c) {
+                    AbstractButton b = (AbstractButton) c;
+                    ButtonModel model = b.getModel();
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+                    Color fondo = model.isPressed() ? cHover.darker() : (model.isRollover() ? cHover : cFondo);
+                    g2.setColor(fondo);
+                    g2.fillRoundRect(0, 0, b.getWidth() - 1, b.getHeight() - 1, 8, 8);
+                    g2.setColor(cBorde);
+                    g2.setStroke(new BasicStroke(1.2f));
+                    g2.drawRoundRect(0, 0, b.getWidth() - 1, b.getHeight() - 1, 8, 8);
+
+                    FontMetrics fm = g2.getFontMetrics(b.getFont());
+                    g2.setColor(Color.WHITE);
+                    int textX = (b.getWidth() - fm.stringWidth(b.getText())) / 2;
+                    int textY = (b.getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+                    g2.drawString(b.getText(), textX, textY);
+                    g2.dispose();
+                }
+            });
             btnAbrirArchivo.addActionListener(e -> abrirArchivoEnSistema(archivo));
 
             panelAdjunto.add(btnAbrirArchivo);

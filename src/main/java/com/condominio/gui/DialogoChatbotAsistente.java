@@ -523,7 +523,89 @@ public class DialogoChatbotAsistente extends JDialog {
             });
             btnAbrirArchivo.addActionListener(e -> abrirArchivoEnSistema(archivo));
 
+            // Botón adicional: Exportar y Guardar como en cualquier ubicación elegida por el usuario
+            JButton btnExportar = new JButton("Exportar a...");
+            btnExportar.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            btnExportar.setFocusPainted(false);
+            btnExportar.setContentAreaFilled(false);
+            btnExportar.setOpaque(false);
+            btnExportar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnExportar.setBorder(new EmptyBorder(6, 12, 6, 12));
+            btnExportar.setToolTipText("Guardar una copia de este informe en la carpeta que elija de su equipo");
+
+            final Color cFondoExp = new Color(0x0F, 0x2A, 0x4A);
+            final Color cHoverExp = new Color(0x1B, 0x44, 0x75);
+            final Color cBordeExp = new Color(0x38, 0xBD, 0xF8);
+
+            btnExportar.setUI(new BasicButtonUI() {
+                @Override
+                public void paint(Graphics g, JComponent c) {
+                    AbstractButton b = (AbstractButton) c;
+                    ButtonModel model = b.getModel();
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+                    Color fondo = model.isPressed() ? cHoverExp.darker() : (model.isRollover() ? cHoverExp : cFondoExp);
+                    g2.setColor(fondo);
+                    g2.fillRoundRect(0, 0, b.getWidth() - 1, b.getHeight() - 1, 8, 8);
+                    g2.setColor(cBordeExp);
+                    g2.setStroke(new BasicStroke(1.2f));
+                    g2.drawRoundRect(0, 0, b.getWidth() - 1, b.getHeight() - 1, 8, 8);
+
+                    FontMetrics fm = g2.getFontMetrics(b.getFont());
+                    g2.setColor(Color.WHITE);
+                    int textX = (b.getWidth() - fm.stringWidth(b.getText())) / 2;
+                    int textY = (b.getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+                    g2.drawString(b.getText(), textX, textY);
+                    g2.dispose();
+                }
+            });
+            btnExportar.addActionListener(e -> exportarArchivoConDialogo(archivo));
+
+            // Botón adicional: Ver el archivo seleccionado directamente en la carpeta de Windows Explorer
+            JButton btnVerCarpeta = new JButton("Ver Carpeta");
+            btnVerCarpeta.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            btnVerCarpeta.setFocusPainted(false);
+            btnVerCarpeta.setContentAreaFilled(false);
+            btnVerCarpeta.setOpaque(false);
+            btnVerCarpeta.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnVerCarpeta.setBorder(new EmptyBorder(6, 12, 6, 12));
+            btnVerCarpeta.setToolTipText("Abrir la carpeta del informe en el Explorador de Archivos");
+
+            final Color cFondoCarp = new Color(0x1E, 0x24, 0x2E);
+            final Color cHoverCarp = new Color(0x2D, 0x37, 0x48);
+            final Color cBordeCarp = EstilosUI.DORADO_PRINCIPAL;
+
+            btnVerCarpeta.setUI(new BasicButtonUI() {
+                @Override
+                public void paint(Graphics g, JComponent c) {
+                    AbstractButton b = (AbstractButton) c;
+                    ButtonModel model = b.getModel();
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+                    Color fondo = model.isPressed() ? cHoverCarp.darker() : (model.isRollover() ? cHoverCarp : cFondoCarp);
+                    g2.setColor(fondo);
+                    g2.fillRoundRect(0, 0, b.getWidth() - 1, b.getHeight() - 1, 8, 8);
+                    g2.setColor(cBordeCarp);
+                    g2.setStroke(new BasicStroke(1.2f));
+                    g2.drawRoundRect(0, 0, b.getWidth() - 1, b.getHeight() - 1, 8, 8);
+
+                    FontMetrics fm = g2.getFontMetrics(b.getFont());
+                    g2.setColor(EstilosUI.DORADO_PRINCIPAL);
+                    int textX = (b.getWidth() - fm.stringWidth(b.getText())) / 2;
+                    int textY = (b.getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+                    g2.drawString(b.getText(), textX, textY);
+                    g2.dispose();
+                }
+            });
+            btnVerCarpeta.addActionListener(e -> abrirCarpetaContenedora(archivo));
+
             panelAdjunto.add(btnAbrirArchivo);
+            panelAdjunto.add(btnExportar);
+            panelAdjunto.add(btnVerCarpeta);
             tarjeta.add(panelAdjunto, BorderLayout.SOUTH);
         }
 
@@ -539,15 +621,108 @@ public class DialogoChatbotAsistente extends JDialog {
             JOptionPane.showMessageDialog(this, "El archivo ya no está disponible en la ruta especificada.", "Archivo no encontrado", JOptionPane.WARNING_MESSAGE);
             return;
         }
+
+        File archivoAbsoluto = archivo.getAbsoluteFile();
+
+        // 1. Intentar abrir con Desktop.getDesktop().open() con ruta absoluta
+        boolean abierto = false;
         try {
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-                Desktop.getDesktop().open(archivo);
-            } else {
-                JOptionPane.showMessageDialog(this, "Ruta del archivo generado:\n" + archivo.getAbsolutePath(), "Archivo Generado", JOptionPane.INFORMATION_MESSAGE);
+                Desktop.getDesktop().open(archivoAbsoluto);
+                abierto = true;
             }
+        } catch (Exception exDesktop) {
+            log.warn("Desktop.open falló para {}: {}. Intentando visores nativos alternativos...", archivoAbsoluto.getName(), exDesktop.getMessage());
+        }
+
+        if (abierto) return;
+
+        // 2. Si es PDF y Windows no tiene visor de escritorio asociado, abrir con Microsoft Edge (nativo en Windows 10/11)
+        boolean esPdf = archivoAbsoluto.getName().toLowerCase().endsWith(".pdf");
+        if (esPdf) {
+            try {
+                Process p = new ProcessBuilder("cmd", "/c", "start", "msedge", "\"" + archivoAbsoluto.getAbsolutePath() + "\"").start();
+                if (p != null) return;
+            } catch (Exception exEdge) {
+                try {
+                    Process p2 = new ProcessBuilder("cmd", "/c", "start", "chrome", "\"" + archivoAbsoluto.getAbsolutePath() + "\"").start();
+                    if (p2 != null) return;
+                } catch (Exception ignored) {}
+            }
+        }
+
+        // 3. Si es CSV/Excel, intentar abrir mediante Excel o start
+        boolean esExcel = archivoAbsoluto.getName().toLowerCase().endsWith(".csv") || archivoAbsoluto.getName().toLowerCase().endsWith(".xlsx");
+        if (esExcel) {
+            try {
+                Process p = new ProcessBuilder("cmd", "/c", "start", "excel", "\"" + archivoAbsoluto.getAbsolutePath() + "\"").start();
+                if (p != null) return;
+            } catch (Exception ignored) {}
+        }
+
+        // 4. Intentar mediante comando start del shell de Windows
+        try {
+            Process p = new ProcessBuilder("cmd", "/c", "start", "\"\"", "\"" + archivoAbsoluto.getAbsolutePath() + "\"").start();
+            if (p != null) return;
+        } catch (Exception exCmd) {
+            log.warn("cmd start falló: {}", exCmd.getMessage());
+        }
+
+        // 5. Si ningún visor externo respondió, abrir el explorador de archivos con el documento seleccionado
+        try {
+            abrirCarpetaContenedora(archivoAbsoluto);
+            AnimadorToast.mostrar("ARCHIVO DISPONIBLE", "Abierto en explorador: " + archivoAbsoluto.getName(), EstilosUI.AZUL_INFO);
+        } catch (Exception exExp) {
+            JOptionPane.showMessageDialog(this,
+                    "Archivo generado exitosamente en:\n" + archivoAbsoluto.getAbsolutePath() +
+                    "\n\nPuede utilizar el botón 'Exportar a...' para guardarlo en la carpeta que prefiera.",
+                    "Archivo Generado", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void exportarArchivoConDialogo(File archivo) {
+        if (archivo == null || !archivo.exists()) {
+            JOptionPane.showMessageDialog(this, "El archivo fuente no está disponible.", "Error de Exportación", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Exportar y Guardar Documento");
+        chooser.setSelectedFile(new File(archivo.getName()));
+
+        int res = chooser.showSaveDialog(this);
+        if (res == JFileChooser.APPROVE_OPTION) {
+            File destino = chooser.getSelectedFile();
+            try {
+                java.nio.file.Files.copy(
+                        archivo.toPath(),
+                        destino.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                );
+                AnimadorToast.mostrar("EXPORTACIÓN EXITOSA", "Guardado en: " + destino.getName(), EstilosUI.VERDE_EXITO);
+                JOptionPane.showMessageDialog(this,
+                        "El informe ha sido exportado exitosamente a:\n" + destino.getAbsolutePath(),
+                        "Exportación Exitosa",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                log.error("Fallo al exportar archivo: {}", ex.getMessage());
+                JOptionPane.showMessageDialog(this, "No se pudo exportar el archivo: " + ex.getMessage(), "Error al Exportar", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void abrirCarpetaContenedora(File archivo) {
+        if (archivo == null) return;
+        try {
+            File abs = archivo.getAbsoluteFile();
+            new ProcessBuilder("explorer.exe", "/select,", abs.getAbsolutePath()).start();
         } catch (Exception ex) {
-            log.error("No se pudo abrir el archivo {}: {}", archivo.getName(), ex.getMessage());
-            JOptionPane.showMessageDialog(this, "No se pudo abrir el visor predeterminado: " + ex.getMessage(), "Aviso", JOptionPane.INFORMATION_MESSAGE);
+            try {
+                File dir = archivo.getParentFile();
+                if (dir != null && Desktop.isDesktopSupported()) {
+                    Desktop.getDesktop().open(dir);
+                }
+            } catch (Exception ignored) {}
         }
     }
 

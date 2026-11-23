@@ -167,14 +167,34 @@ public class DialogoGeneradorReportes extends JDialog {
                 lblEstado.setText("PDF generado con éxito: " + pdfGenerado.getName());
                 lblEstado.setForeground(EstilosUI.VERDE_EXITO);
 
-                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-                    Desktop.getDesktop().open(pdfGenerado);
-                }
+                abrirDocumentoPdfSeguro(pdfGenerado);
             }
         } catch (Exception ex) {
             log.error("Error al generar reporte PDF: {}", ex.getMessage(), ex);
             lblEstado.setText("Error al generar PDF: " + ex.getMessage());
             lblEstado.setForeground(EstilosUI.ROJO_ERROR);
         }
+    }
+
+    private void abrirDocumentoPdfSeguro(File archivo) {
+        if (archivo == null) return;
+        File abs = archivo.getAbsoluteFile();
+        try {
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
+                Desktop.getDesktop().open(abs);
+                return;
+            }
+        } catch (Exception exDesktop) {
+            log.warn("Desktop.open falló, abriendo con visor alternativo: {}", exDesktop.getMessage());
+        }
+
+        try {
+            new ProcessBuilder("cmd", "/c", "start", "msedge", "\"" + abs.getAbsolutePath() + "\"").start();
+            return;
+        } catch (Exception ignored) {}
+
+        try {
+            new ProcessBuilder("explorer.exe", "/select,", abs.getAbsolutePath()).start();
+        } catch (Exception ignored) {}
     }
 }

@@ -264,7 +264,7 @@ public class MotorIALocalCondominio {
             sb.append("- Balance Neto en Caja: S/ ").append(String.format("%.2f", estado.getBalanceNeto())).append("\n");
             sb.append("- Eficiencia de Cobranza: ").append(String.format("%.1f%%", estado.getPorcentajeCobranza())).append("\n\n");
             sb.append("El documento oficial ha sido generado y archivado en: ").append(archivo.getAbsolutePath()).append("\n");
-            sb.append("Puede abrirlo directamente mediante el botón inferior.");
+            sb.append("Puede abrirlo directamente, exportarlo a otra carpeta con 'Exportar a...' o abrir su ubicación con 'Ver Carpeta'.");
 
             return RespuestaChatbotDTO.builder()
                     .textoRespuesta(sb.toString())
@@ -396,7 +396,7 @@ public class MotorIALocalCondominio {
             sb.append("- Recaudación Actual en BD: S/ ").append(String.format("%.2f", estado.getTotalRecaudado())).append("\n");
             sb.append("- Cartera Pendiente en BD: S/ ").append(String.format("%.2f", estado.getTotalPorCobrar())).append("\n");
             sb.append("- Ubicación: ").append(archivoExcel.getAbsolutePath()).append("\n\n");
-            sb.append("Puede abrir la planilla de inmediato con el botón que aparece a continuación.");
+            sb.append("Puede abrir la planilla de inmediato, exportarla con 'Exportar a...' o abrir su ubicación con 'Ver Carpeta'.");
 
             return RespuestaChatbotDTO.builder()
                     .textoRespuesta(sb.toString())

@@ -70,7 +70,7 @@ public class ReportePdfService {
         doc.add(tabla);
         agregarPiePagina(doc);
         doc.close();
-        return archivo;
+        return archivo.getAbsoluteFile();
     }
 
     private void agregarFilaVoucher(PdfPTable tabla, String etiqueta, String valor) {
@@ -144,7 +144,7 @@ public class ReportePdfService {
         agregarPiePagina(doc);
         doc.close();
         log.info("Reporte PDF generado exitosamente: {}", archivo.getAbsolutePath());
-        return archivo;
+        return archivo.getAbsoluteFile();
     }
 
     // 2. Cuotas pendientes consolidadas por edificio
@@ -190,7 +190,7 @@ public class ReportePdfService {
 
         agregarPiePagina(doc);
         doc.close();
-        return archivo;
+        return archivo.getAbsoluteFile();
     }
 
     // 3. Resumen mensual de ingresos y gastos
@@ -236,7 +236,7 @@ public class ReportePdfService {
         doc.add(tabla);
         agregarPiePagina(doc);
         doc.close();
-        return archivo;
+        return archivo.getAbsoluteFile();
     }
 
     // 4. Registro de Incidentes y Reservas del Mes
@@ -297,7 +297,7 @@ public class ReportePdfService {
 
         agregarPiePagina(doc);
         doc.close();
-        return archivo;
+        return archivo.getAbsoluteFile();
     }
 
     private void agregarMembrete(Document doc, String tituloReporte) throws DocumentException {

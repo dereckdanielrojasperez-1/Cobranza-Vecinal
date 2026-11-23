@@ -79,7 +79,7 @@ public class ExportadorCsvService {
         }
 
         log.info("Archivo CSV exportado exitosamente: {}", archivo.getAbsolutePath());
-        return archivo;
+        return archivo.getAbsoluteFile();
     }
 
     // Exporta una matriz de datos estructurada a formato CSV/Excel con BOM UTF-8
@@ -123,7 +123,7 @@ public class ExportadorCsvService {
             writer.flush();
         }
         log.info("Archivo Excel/CSV generado exitosamente: {}", archivo.getAbsolutePath());
-        return archivo;
+        return archivo.getAbsoluteFile();
     }
 
     private String escaparCsv(String valor) {

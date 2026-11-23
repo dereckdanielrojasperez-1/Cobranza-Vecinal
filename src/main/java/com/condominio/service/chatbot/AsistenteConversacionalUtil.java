@@ -138,6 +138,9 @@ public final class AsistenteConversacionalUtil {
 
     public static boolean esPreguntaMorosidad(String norm) {
         if (norm.isEmpty()) return false;
+        if (norm.contains("quienes") || norm.contains("quien") || norm.contains("lista") || norm.contains("cuales")) {
+            return false;
+        }
         return norm.contains("moros") ||
                 norm.contains("no paga") ||
                 norm.contains("no cancela") ||

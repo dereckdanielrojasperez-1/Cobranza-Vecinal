@@ -101,8 +101,9 @@ public class ChatbotPresidenteStrategy implements IEstrategiaChatbot {
             return procesarMetodosDePago();
         }
 
-        // 9. Consulta de Consumo, Piso, Departamento y Cuotas
-        if (norm.contains("consumo") || norm.contains("piso") || norm.contains("depto") || norm.contains("cuota") ||
+        // 9. Consulta de Consumo, Piso, Departamento y Cuotas (evitando colisión de subcadena con 'alícuota')
+        if (norm.contains("consumo") || norm.contains("piso") || norm.contains("depto") ||
+                (norm.contains("cuota") && !norm.contains("alicuota")) ||
                 norm.contains("deuda") || norm.contains("cuanto debo") || norm.contains("saldo") || norm.contains("luz") || norm.contains("agua")) {
             return procesarConsultaConsumo(depto, fachada);
         }
@@ -126,15 +127,8 @@ public class ChatbotPresidenteStrategy implements IEstrategiaChatbot {
                     .build();
         }
 
-        // 12. Fallback General Amigable y Contextual
-        return RespuestaChatbotDTO.builder()
-                .textoRespuesta("Estimado Presidente, puedo responder sobre sus opciones de pago (Yape/Plin/Bancos), " +
-                        "su consumo mensual en el Depto " + depto + " (Piso 1), avisos oficiales o iniciar el recorrido guiado " +
-                        "de la pantalla con 'Modo instructivo'.")
-                .tipo(TipoRespuestaChatbot.TEXTO)
-                .reproducirAudio(true)
-                .sugerenciasAccion(obtenerSugerenciasIniciales())
-                .build();
+        // 12. Motor IA Local Conectado a BD en Tiempo Real (consultas normativas, alícuotas, convivencia y estado en vivo)
+        return MotorIALocalCondominio.responderConsultaInteligente(norm, msgOriginal, RolUsuario.RESIDENTE, depto, contexto);
     }
 
     private RespuestaChatbotDTO procesarMetodosDePago() {

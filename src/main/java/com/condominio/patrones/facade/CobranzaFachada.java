@@ -102,6 +102,17 @@ public class CobranzaFachada {
     @Autowired(required = false)
     private ReservaAreaRepositorio reservaAreaRepositorio;
     private final List<Visita> visitasMemoria = new ArrayList<>();
+    private final List<CuotaDTO> cuotasFallback = Collections.synchronizedList(new ArrayList<>());
+
+    private synchronized void inicializarCuotasFallbackSiVacio() {
+        if (cuotasFallback.isEmpty()) {
+            cuotasFallback.add(CuotaDTO.builder().idCuota(1L).numeroDepartamento("101").montoBase(250.0).montoFinal(250.0).estado("PENDIENTE").fechaVencimiento(LocalDate.now().plusDays(10).toString()).build());
+            cuotasFallback.add(CuotaDTO.builder().idCuota(2L).numeroDepartamento("102").montoBase(180.0).montoFinal(180.0).estado("PAGADO").fechaVencimiento(LocalDate.now().minusDays(5).toString()).build());
+            cuotasFallback.add(CuotaDTO.builder().idCuota(3L).numeroDepartamento("201").montoBase(320.0).montoFinal(160.0).estado("PARCIAL").fechaVencimiento(LocalDate.now().plusDays(5).toString()).build());
+            cuotasFallback.add(CuotaDTO.builder().idCuota(4L).numeroDepartamento("202").montoBase(280.0).montoFinal(280.0).estado("PENDIENTE").fechaVencimiento(LocalDate.now().plusDays(12).toString()).build());
+            cuotasFallback.add(CuotaDTO.builder().idCuota(5L).numeroDepartamento("301").montoBase(350.0).montoFinal(350.0).estado("PAGADO").fechaVencimiento(LocalDate.now().minusDays(2).toString()).build());
+        }
+    }
 
     // Constructor para inyeccion de la capa de servicios desacoplada (SRP) y repositorios por Spring Boot.
     @Autowired
@@ -593,6 +604,21 @@ public class CobranzaFachada {
     @Transactional
     public boolean procesarPagoConRepositorio(Long idCuota, double monto, String codigoOperacion) {
         if (cuotaRepositorio == null || pagoRepositorio == null) {
+            inicializarCuotasFallbackSiVacio();
+            for (int i = 0; i < cuotasFallback.size(); i++) {
+                CuotaDTO c = cuotasFallback.get(i);
+                if (c.getIdCuota() != null && c.getIdCuota().equals(idCuota)) {
+                    cuotasFallback.set(i, CuotaDTO.builder()
+                            .idCuota(c.getIdCuota())
+                            .numeroDepartamento(c.getNumeroDepartamento())
+                            .montoBase(c.getMontoBase())
+                            .montoFinal(c.getMontoFinal())
+                            .estado("PAGADO")
+                            .fechaVencimiento(c.getFechaVencimiento())
+                            .build());
+                    return true;
+                }
+            }
             throw new IllegalStateException("Los repositorios JPA no han sido inyectados en la fachada");
         }
 
@@ -729,13 +755,8 @@ public class CobranzaFachada {
         }
 
         // Fallback en memoria si no hay repositorios inyectados
-        List<CuotaDTO> demo = new ArrayList<>();
-        demo.add(CuotaDTO.builder().idCuota(1L).numeroDepartamento("101").montoBase(250.0).montoFinal(250.0).estado("PENDIENTE").fechaVencimiento(LocalDate.now().plusDays(10).toString()).build());
-        demo.add(CuotaDTO.builder().idCuota(2L).numeroDepartamento("102").montoBase(180.0).montoFinal(180.0).estado("PAGADO").fechaVencimiento(LocalDate.now().minusDays(5).toString()).build());
-        demo.add(CuotaDTO.builder().idCuota(3L).numeroDepartamento("201").montoBase(320.0).montoFinal(160.0).estado("PARCIAL").fechaVencimiento(LocalDate.now().plusDays(5).toString()).build());
-        demo.add(CuotaDTO.builder().idCuota(4L).numeroDepartamento("202").montoBase(280.0).montoFinal(280.0).estado("PENDIENTE").fechaVencimiento(LocalDate.now().plusDays(12).toString()).build());
-        demo.add(CuotaDTO.builder().idCuota(5L).numeroDepartamento("301").montoBase(350.0).montoFinal(350.0).estado("PAGADO").fechaVencimiento(LocalDate.now().minusDays(2).toString()).build());
-        return demo;
+        inicializarCuotasFallbackSiVacio();
+        return new ArrayList<>(cuotasFallback);
     }
 
     // Delega la creacion del lote de demostracion de cuotas al componente {@link CargadorDatosIniciales}.
@@ -1370,14 +1391,18 @@ public class CobranzaFachada {
         }
 
         if (cuotaRepositorio == null) {
-            return CuotaDTO.builder()
-                    .idCuota(1000L + (long) (Math.random() * 9000))
+            inicializarCuotasFallbackSiVacio();
+            long nuevoId = 1000L + (long) (Math.random() * 9000);
+            CuotaDTO cuotaDTO = CuotaDTO.builder()
+                    .idCuota(nuevoId)
                     .numeroDepartamento(numeroDepartamento.trim())
                     .montoBase(montoBase)
                     .montoFinal(montoBase)
                     .estado("PENDIENTE")
                     .fechaVencimiento((fechaVencimiento != null ? fechaVencimiento : LocalDate.now().plusDays(15)).toString())
                     .build();
+            cuotasFallback.add(cuotaDTO);
+            return cuotaDTO;
         }
 
         Departamento depto = (departamentoRepositorio != null)

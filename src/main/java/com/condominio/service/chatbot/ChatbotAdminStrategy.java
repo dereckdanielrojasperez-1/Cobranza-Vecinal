@@ -188,14 +188,14 @@ public class ChatbotAdminStrategy implements IEstrategiaChatbot {
             return procesarGeneracionVoucher(norm, contexto);
         }
 
-        // 9. Exportación general a PDF (Financiero, Morosidad, Estado de Cuenta)
-        if (norm.contains("pdf") || norm.contains("reporte pdf") || norm.contains("exportar pdf") || norm.contains("resumen ingresos")) {
-            return procesarReportePdf(norm, contexto);
+        // 9. Exportación general y generación de Informes a PDF en tiempo real con conexión a la Base de Datos
+        if (MotorIALocalCondominio.esPeticionInformePdf(norm) || norm.contains("pdf") || norm.contains("reporte pdf") || norm.contains("exportar pdf") || norm.contains("resumen ingresos")) {
+            return MotorIALocalCondominio.generarInformePdfEnTiempoReal(norm, msgOriginal, contexto);
         }
 
-        // 10. Exportación a Excel / CSV
-        if (norm.contains("excel") || norm.contains("csv") || norm.contains("planilla") || norm.contains("exportar excel")) {
-            return procesarReporteExcel(norm, contexto);
+        // 10. Exportación de datos y planillas a Microsoft Excel en tiempo real con conexión a la Base de Datos
+        if (MotorIALocalCondominio.esPeticionExcel(norm) || norm.contains("excel") || norm.contains("csv") || norm.contains("planilla") || norm.contains("exportar excel")) {
+            return MotorIALocalCondominio.generarExcelEnTiempoReal(norm, msgOriginal, contexto);
         }
 
         // 11. Comandos CRUD conversacionales
@@ -220,35 +220,8 @@ public class ChatbotAdminStrategy implements IEstrategiaChatbot {
             return procesarConsultaInmuebles(fachada);
         }
 
-        // 14. Fallback Contextual e Inteligente (limpio y no repetitivo)
-        List<String> sugerenciasFallback = Arrays.asList(
-                "Auditar recaudación y morosidad",
-                "Ayúdame a manejarlo",
-                "Generar voucher Depto 101",
-                "Exportar reporte a PDF",
-                "Iniciar modo instructivo"
-        );
-
-        String orientacion;
-        if (norm.contains("dinero") || norm.contains("caja") || norm.contains("cuenta") || norm.contains("banco") || norm.contains("soles")) {
-            orientacion = "Respecto al balance financiero del condominio, puedes auditar los números actuales diciendo 'auditar recaudación', 'exportar ingresos a PDF' o 'exportar padrón a Excel'.";
-        } else if (norm.contains("puerta") || norm.contains("garita") || norm.contains("llave") || norm.contains("camara") || norm.contains("limpieza")) {
-            orientacion = "Para novedades de infraestructura y portería, puedes registrar novedades con 'registrar incidente [descripción]' o revisar la bitácora operativa en el menú Operaciones.";
-        } else {
-            orientacion = "He recibido tu consulta. Para el perfil Administrador puedo asistirte con:\n\n" +
-                    "- 'Auditar recaudación y morosidad' (balance y cuotas al día).\n" +
-                    "- 'Generar voucher Depto 101' (emisión de recibo PDF).\n" +
-                    "- 'Exportar reporte a PDF' o 'Exportar a Excel' (descargas oficiales).\n" +
-                    "- 'Emitir cuota 102 monto 200' o 'Registrar pago depto 101 monto 200'.\n" +
-                    "- O decirme 'ayúdame a manejarlo' para un recorrido paso a paso.";
-        }
-
-        return RespuestaChatbotDTO.builder()
-                .textoRespuesta(orientacion)
-                .tipo(TipoRespuestaChatbot.TEXTO)
-                .reproducirAudio(true)
-                .sugerenciasAccion(sugerenciasFallback)
-                .build();
+        // 14. Motor IA Local Conectado a BD en Tiempo Real: responde cualquier duda técnica, financiera, legal o de dominio
+        return MotorIALocalCondominio.responderConsultaInteligente(norm, msgOriginal, RolUsuario.ADMINISTRADOR, deptoUsuario, contexto);
     }
 
     private RespuestaChatbotDTO procesarGeneracionVoucher(String msg, ContextoChatbot contexto) {

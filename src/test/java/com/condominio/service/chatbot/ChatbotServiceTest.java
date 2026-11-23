@@ -261,4 +261,110 @@ public class ChatbotServiceTest {
         assertTrue(resp.getTextoRespuesta().contains("Finanzas"));
         assertTrue(resp.getTextoRespuesta().contains("Operaciones"));
     }
+
+    @Test
+    @DisplayName("IA Local: Respuestas de caja, dinero y deudores en tiempo real desde la BD")
+    public void testIALocalConexionTiempoRealRecaudacionYDeudores() {
+        // 1. Dinero en caja / recaudación en vivo
+        RespuestaChatbotDTO respCaja = chatbotService.procesarMensaje(
+                "¿cuánto dinero hay en caja?", RolUsuario.ADMINISTRADOR, "101"
+        );
+        assertNotNull(respCaja);
+        assertEquals(TipoRespuestaChatbot.TEXTO, respCaja.getTipo());
+        assertTrue(respCaja.getTextoRespuesta().contains("DATOS EN VIVO DE CAJA"));
+        assertTrue(respCaja.getTextoRespuesta().contains("Total Recaudado"));
+        assertTrue(respCaja.getTextoRespuesta().contains("Saldo Neto"));
+
+        // 2. Consulta de quiénes deben
+        RespuestaChatbotDTO respDeudores = chatbotService.procesarMensaje(
+                "¿quiénes deben o están morosos?", RolUsuario.ADMINISTRADOR, "101"
+        );
+        assertNotNull(respDeudores);
+        assertEquals(TipoRespuestaChatbot.TEXTO, respDeudores.getTipo());
+        assertTrue(respDeudores.getTextoRespuesta().contains("PADRON DE DEUDORES EN TIEMPO REAL"));
+
+        // 3. Consulta de monto por cobrar
+        RespuestaChatbotDTO respMontoDeuda = chatbotService.procesarMensaje(
+                "¿cuánto dinero falta cobrar?", RolUsuario.ADMINISTRADOR, "101"
+        );
+        assertNotNull(respMontoDeuda);
+        assertTrue(respMontoDeuda.getTextoRespuesta().contains("CARTERA PENDIENTE Y MOROSIDAD"));
+    }
+
+    @Test
+    @DisplayName("IA Local: Generación de informes PDF en tiempo real con conexión a BD")
+    public void testIALocalGeneracionInformePdfTiempoReal() {
+        RespuestaChatbotDTO respInforme = chatbotService.procesarMensaje(
+                "generar informe en pdf", RolUsuario.ADMINISTRADOR, "101"
+        );
+        assertNotNull(respInforme);
+        assertEquals(TipoRespuestaChatbot.REPORTE_PDF, respInforme.getTipo());
+        assertNotNull(respInforme.getArchivoGenerado());
+        assertTrue(respInforme.getArchivoGenerado().exists());
+        assertTrue(respInforme.getArchivoGenerado().getName().endsWith(".pdf"));
+        assertTrue(respInforme.getTextoRespuesta().contains("INFORME PDF EMITIDO EN TIEMPO REAL"));
+        assertTrue(respInforme.getTextoRespuesta().contains("Recaudación Efectiva"));
+    }
+
+    @Test
+    @DisplayName("IA Local: Generación de planillas Excel en tiempo real con conexión a BD")
+    public void testIALocalGeneracionExcelTiempoReal() {
+        RespuestaChatbotDTO respExcel = chatbotService.procesarMensaje(
+                "generar excel de cobranza", RolUsuario.ADMINISTRADOR, "101"
+        );
+        assertNotNull(respExcel);
+        assertEquals(TipoRespuestaChatbot.REPORTE_EXCEL, respExcel.getTipo());
+        assertNotNull(respExcel.getArchivoGenerado());
+        assertTrue(respExcel.getArchivoGenerado().exists());
+        assertTrue(respExcel.getArchivoGenerado().getName().endsWith(".csv"));
+        assertTrue(respExcel.getTextoRespuesta().contains("PLANILLA EXCEL GENERADA EN TIEMPO REAL"));
+        assertTrue(respExcel.getTextoRespuesta().contains("BOM UTF-8"));
+    }
+
+    @Test
+    @DisplayName("IA Local: Actualización dinámica e inmediata ante nuevos registros en la BD")
+    public void testIALocalActualizacionDinamicaConNuevosDatos() {
+        // Emitir una nueva cuota en la base de datos para el departamento 402
+        fachada.emitirNuevaCuota("402", 300.0, java.time.LocalDate.now().plusDays(20));
+
+        // Preguntar a la IA por el depto 402
+        RespuestaChatbotDTO respDepto = chatbotService.procesarMensaje(
+                "¿cuál es el estado del depto 402?", RolUsuario.ADMINISTRADOR, "101"
+        );
+        assertNotNull(respDepto);
+        assertTrue(respDepto.getTextoRespuesta().contains("DEPARTAMENTO 402"));
+        assertTrue(respDepto.getTextoRespuesta().contains("300.00"));
+
+        // Preguntar a la IA la lista de quiénes deben
+        RespuestaChatbotDTO respLista = chatbotService.procesarMensaje(
+                "¿quiénes deben?", RolUsuario.ADMINISTRADOR, "101"
+        );
+        assertNotNull(respLista);
+        assertTrue(respLista.getTextoRespuesta().contains("Depto 402"));
+    }
+
+    @Test
+    @DisplayName("IA Local: Respuestas de marco legal, alícuotas, normas y cálculos matemáticos")
+    public void testIALocalDominioLegalYCalculos() {
+        // Marco legal Ley 27157
+        RespuestaChatbotDTO respLey = chatbotService.procesarMensaje(
+                "¿cuál es la ley de condominios en el Perú?", RolUsuario.ADMINISTRADOR, "101"
+        );
+        assertNotNull(respLey);
+        assertTrue(respLey.getTextoRespuesta().contains("LEY 27157"));
+
+        // Alícuota
+        RespuestaChatbotDTO respAlicuota = chatbotService.procesarMensaje(
+                "¿cómo se calcula la alícuota?", RolUsuario.RESIDENTE, "101"
+        );
+        assertNotNull(respAlicuota);
+        assertTrue(respAlicuota.getTextoRespuesta().contains("ALICUOTA CONDOMINAL"));
+
+        // Cálculo matemático
+        RespuestaChatbotDTO respCalc = chatbotService.procesarMensaje(
+                "¿cuánto es 200 * 12?", RolUsuario.ADMINISTRADOR, "101"
+        );
+        assertNotNull(respCalc);
+        assertTrue(respCalc.getTextoRespuesta().contains("2400.00"));
+    }
 }

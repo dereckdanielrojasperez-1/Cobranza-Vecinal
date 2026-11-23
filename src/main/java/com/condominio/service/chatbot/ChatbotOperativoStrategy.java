@@ -140,15 +140,8 @@ public class ChatbotOperativoStrategy implements IEstrategiaChatbot {
             return procesarRegistrarVisita(msgOriginal, fachada);
         }
 
-        // 13. Respuesta Informativa Operativa Fallback
-        return RespuestaChatbotDTO.builder()
-                .textoRespuesta("Módulo Operativo listo. Puede consultar: 'estado de limpieza', " +
-                        "'ver incidencias abiertas', 'visitas del día', o ejecutar: " +
-                        "'registrar incidente [descripción]' o 'registrar visita [nombre] depto [número]'.")
-                .tipo(TipoRespuestaChatbot.TEXTO)
-                .reproducirAudio(true)
-                .sugerenciasAccion(obtenerSugerenciasIniciales())
-                .build();
+        // 13. Motor IA Local Conectado a BD en Tiempo Real (consultas de mantenimiento, protocolos técnicos y bitácora)
+        return MotorIALocalCondominio.responderConsultaInteligente(norm, msgOriginal, RolUsuario.CONSERJE, deptoUsuario, contexto);
     }
 
     private RespuestaChatbotDTO procesarEstadoLimpieza(CobranzaFachada fachada) {
